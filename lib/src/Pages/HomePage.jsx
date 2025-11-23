@@ -184,15 +184,17 @@ const HomePage = () => {
         }
           .bar-title {
   color: #ffffff;
-  font-size: 1.4rem;
+  font-size: clamp(1rem, 2vw, 1.4rem);
   font-weight: 700;
   letter-spacing: 1px;
   text-shadow: 0 0 10px rgba(59,130,246,0.6);
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-}
+
+  white-space: normal;
+  word-break: break-word;
+  flex-shrink: 1;
+
+  text-align: center;
+
 
       `}</style>
 
