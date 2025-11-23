@@ -864,6 +864,176 @@ const AdminDashboard = () => {
             </div>
           )}
 
+          {activeTab === 'purchase-requests' && (
+            <div className="dashboard-content">
+              <h2 className="section-title">Book Purchase Requests</h2>
+              <p style={{ marginBottom: '20px', color: '#666' }}>
+                Confirm when students physically receive their purchased books. Once confirmed, the book is permanently assigned to the student.
+              </p>
+
+              {purchaseRequests.length === 0 ? (
+                <div className="empty-state">
+                  <p>✅ No pending purchase requests</p>
+                </div>
+              ) : (
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Book Title</th>
+                      <th>Student</th>
+                      <th>USN</th>
+                      <th>Seller</th>
+                      <th>Requested Date</th>
+                      <th>Priority</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {purchaseRequests.map((request) => (
+                      <tr key={request.request_id}>
+                        <td>
+                          <strong>{request.title}</strong>
+                          {request.author && (
+                            <div style={{ fontSize: '0.9em', color: '#666' }}>
+                              by {request.author}
+                            </div>
+                          )}
+                          <div style={{ fontSize: '0.85em', color: '#888' }}>
+                            Type: {request.type} | Format: {request.book_format}
+                          </div>
+                        </td>
+                        <td>
+                          {request.student_first_name} {request.student_last_name}
+                          <div style={{ fontSize: '0.9em', color: '#666' }}>
+                            @{request.student_username}
+                          </div>
+                        </td>
+                        <td>{request.student_usn}</td>
+                        <td>
+                          {request.seller_first_name} {request.seller_last_name}
+                          <div style={{ fontSize: '0.9em', color: '#666' }}>
+                            📞 {request.seller_contact}
+                          </div>
+                        </td>
+                        <td>
+                          {new Date(request.requested_at).toLocaleDateString()}
+                          <div style={{ fontSize: '0.85em', color: '#888' }}>
+                            {new Date(request.requested_at).toLocaleTimeString()}
+                          </div>
+                        </td>
+                        <td>
+                          {request.is_priority_buyer ? (
+                            <span style={{
+                              color: '#10b981',
+                              fontWeight: 'bold',
+                              padding: '4px 8px',
+                              background: '#d1fae5',
+                              borderRadius: '4px',
+                              fontSize: '0.9em'
+                            }}>
+                              🎯 First in Queue
+                            </span>
+                          ) : (
+                            <span style={{
+                              color: '#f59e0b',
+                              padding: '4px 8px',
+                              background: '#fef3c7',
+                              borderRadius: '4px',
+                              fontSize: '0.9em'
+                            }}>
+                              ⏳ In Queue
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                            <button
+                              style={{
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: 'white',
+                                padding: '8px 16px',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: '600',
+                                fontSize: '0.9em',
+                                transition: 'all 0.3s'
+                              }}
+                              onClick={() => handleConfirmBookReceived(request.request_id)}
+                              title="Confirm student received the book"
+                            >
+                              ✅ Confirm Handover
+                            </button>
+                            <button
+                              style={{
+                                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                color: 'white',
+                                padding: '8px 16px',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: '600',
+                                fontSize: '0.9em',
+                                transition: 'all 0.3s'
+                              }}
+                              onClick={() => handleRejectPurchaseRequest(request.request_id)}
+                              title="Reject this request"
+                            >
+                              ❌ Reject
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              <div style={{
+                marginTop: '30px',
+                padding: '20px',
+                background: '#f0f9ff',
+                borderRadius: '8px',
+                border: '1px solid #bfdbfe'
+              }}>
+                <h3 style={{ margin: '0 0 15px 0', color: '#1e40af' }}>
+                  📌 Admin Verification Workflow:
+                </h3>
+                <ol style={{ margin: 0, paddingLeft: '20px', color: '#1e3a8a', lineHeight: '1.8' }}>
+                  <li><strong>Student Requests Book:</strong> Student clicks "Request to Buy" on marketplace</li>
+                  <li><strong>Request Appears Here:</strong> Shows in this table with student & book details</li>
+                  <li><strong>Physical Handover:</strong> Student collects book from library/seller</li>
+                  <li><strong>Admin Confirms:</strong> Click "✅ Confirm Handover" button after verification</li>
+                  <li><strong>Automatic Assignment:</strong>
+                    <ul style={{ marginTop: '5px' }}>
+                      <li>Book permanently assigned to student</li>
+                      <li>Entry created in purchased_books table</li>
+                      <li>Book removed from marketplace</li>
+                      <li>Other pending requests cancelled</li>
+                      <li>Student can view in "My Purchased Books"</li>
+                    </ul>
+                  </li>
+                </ol>
+              </div>
+
+              {purchaseRequests.length > 0 && (
+                <div style={{
+                  marginTop: '20px',
+                  padding: '15px',
+                  background: '#fffbeb',
+                  borderRadius: '8px',
+                  border: '1px solid #fbbf24'
+                }}>
+                  <strong style={{ color: '#92400e' }}>⚠️ Important:</strong>
+                  <p style={{ margin: '5px 0 0 0', color: '#78350f' }}>
+                    Only click "Confirm Handover" after you have personally verified that the student has received the physical book.
+                    This action is irreversible and will permanently assign the book to the student.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'marketplace-upload' && (
             <div className="dashboard-content">
               <h2 className="section-title">Upload Soft Copy Book to Marketplace</h2>
