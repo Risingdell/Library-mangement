@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import ThreeBackground from '../Components/ThreeBackground';
-import sitLogo from '../assets/sit2.jpg';
-import deepRightImg from '../assets/branch.png';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import ThreeBackground from "../Components/ThreeBackground";
+import sitLogo from "../assets/sit2.jpg";
+import deepRightImg from "../assets/branch.png";
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const [typedText, setTypedText] = useState('');
-  const fullText = '...Welcome to Artificial Intelligence and Data Science.';
+  const [typedText, setTypedText] = useState("");
+  const fullText = "...Welcome to Artificial Intelligence and Data Science.";
 
   useEffect(() => {
     let index = 0;
@@ -20,8 +20,8 @@ const HomePage = () => {
     return () => clearInterval(typingInterval);
   }, []);
 
-  const handleStudentClick = () => navigate('/register');
-  const handleAdminClick = () => navigate('/admin-login');
+  const handleStudentClick = () => navigate("/register");
+  const handleAdminClick = () => navigate("/admin-login");
 
   return (
     <>
@@ -182,12 +182,25 @@ const HomePage = () => {
             margin-right: 8px;
           }
         }
+          .bar-title {
+  color: #ffffff;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(59,130,246,0.6);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
       `}</style>
 
       <ThreeBackground />
 
       <div className="top-bar">
         <img src={sitLogo} alt="Logo Left" className="bar-image" />
+        <div className="bar-title">SRINIVAS INSTITUTE OF TECHNOLOGY</div>
         <img src={deepRightImg} alt="Logo Right" className="bar-right-img" />
       </div>
 
@@ -214,10 +227,6 @@ const HomePage = () => {
 };
 
 export default HomePage;
-
-
-
-
 
 // import React, { useState, useEffect } from 'react';
 // import { useNavigate } from 'react-router-dom';
@@ -366,9 +375,3 @@ export default HomePage;
 // };
 
 // export default HomePage;
-
-
-
-
-
-
