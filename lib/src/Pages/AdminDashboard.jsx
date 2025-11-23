@@ -31,6 +31,15 @@ const AdminDashboard = () => {
     title: ''
   };
   const [form, setForm] = useState(initialFormState);
+  const [marketplaceForm, setMarketplaceForm] = useState({
+    type: '',
+    title: '',
+    author: '',
+    description: '',
+    acc_no: '',
+    contact: 'admin@library.com'
+  });
+  const [uploadStatusMessage, setUploadStatusMessage] = useState('');
 
   // Fetch admin on load
   useEffect(() => {
@@ -306,6 +315,12 @@ const AdminDashboard = () => {
             </span>
             <span className="nav-text">Add Books</span>
           </button>
+          <button className={`nav-item${activeTab === 'marketplace-upload' ? ' active' : ''}`} onClick={() => handleTabChange('marketplace-upload')}>
+            <span className="nav-icon">
+              📥
+            </span>
+            <span className="nav-text">Upload Soft Copy Books</span>
+          </button>
         </nav>
         <div className="sidebar-footer">
           <button className="nav-item theme-toggle-btn" onClick={toggleTheme} title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}>
@@ -334,6 +349,7 @@ const AdminDashboard = () => {
             {activeTab === 'pending-returns' && 'Pending Returns'}
             {activeTab === 'history' && 'Borrowing History'}
             {activeTab === 'add' && 'Add Books'}
+            {activeTab === 'marketplace-upload' && 'Upload Soft Copy Books to Marketplace'}
           </h1>
           {/* Search bar in header */}
           {(activeTab === 'members' || activeTab === 'history') && (
@@ -791,6 +807,148 @@ const AdminDashboard = () => {
                   </select>
                 </label>
                 <button type="submit">Add Book</button>
+              </form>
+            </div>
+          )}
+
+          {activeTab === 'marketplace-upload' && (
+            <div className="dashboard-content">
+              <h2 className="section-title">Upload Soft Copy Book to Marketplace</h2>
+              <p style={{ marginBottom: '20px', color: '#666' }}>
+                Upload digital books (PDF, DOCX, etc.) that will be available for instant download by all students.
+              </p>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+
+                // Validate file upload
+                if (!formData.get('bookFile')?.name) {
+                  setUploadStatusMessage('❌ Please select a file to upload.');
+                  return;
+                }
+
+                // Add book_format as soft_copy
+                formData.set('book_format', 'soft_copy');
+
+                const url = API_URL + '/sell-book';
+                axios.post(url, formData, {
+                  withCredentials: true,
+                  headers: {
+                    'Content-Type': 'multipart/form-data'
+                  }
+                })
+                  .then(() => {
+                    setUploadStatusMessage('✅ Soft copy book uploaded successfully and available to all students!');
+                    e.target.reset();
+                    setMarketplaceForm({
+                      type: '',
+                      title: '',
+                      author: '',
+                      description: '',
+                      acc_no: '',
+                      contact: 'admin@library.com'
+                    });
+                  })
+                  .catch((err) => {
+                    const errorMsg = err.response?.data?.message || 'Failed to upload. Try again.';
+                    setUploadStatusMessage('❌ ' + errorMsg);
+                  });
+              }}>
+                <label>
+                  Upload File (PDF, DOCX, EPUB, TXT):
+                  <input
+                    type="file"
+                    name="bookFile"
+                    accept=".pdf,.doc,.docx,.epub,.txt"
+                    required
+                  />
+                  <small style={{ display: 'block', marginTop: '4px', color: '#666' }}>
+                    Maximum file size: 50MB
+                  </small>
+                </label>
+
+                <label>
+                  Type of Material:
+                  <select
+                    name="type"
+                    value={marketplaceForm.type}
+                    onChange={(e) => setMarketplaceForm({ ...marketplaceForm, type: e.target.value })}
+                    required
+                  >
+                    <option value="">-- Select Type --</option>
+                    <option value="Notes">Notes</option>
+                    <option value="Xerox">Xerox</option>
+                    <option value="Textbook">Textbook</option>
+                    <option value="question-Paper">Question Papers</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+
+                <label>
+                  Title:
+                  <input
+                    type="text"
+                    name="title"
+                    value={marketplaceForm.title}
+                    onChange={(e) => setMarketplaceForm({ ...marketplaceForm, title: e.target.value })}
+                    placeholder="e.g., Engineering Math Notes"
+                    required
+                  />
+                </label>
+
+                <label>
+                  Author:
+                  <input
+                    type="text"
+                    name="author"
+                    value={marketplaceForm.author}
+                    onChange={(e) => setMarketplaceForm({ ...marketplaceForm, author: e.target.value })}
+                    placeholder="e.g., B.S. Grewal"
+                  />
+                </label>
+
+                <label>
+                  Description:
+                  <textarea
+                    name="description"
+                    value={marketplaceForm.description}
+                    onChange={(e) => setMarketplaceForm({ ...marketplaceForm, description: e.target.value })}
+                    rows="5"
+                    placeholder="Provide details like modules, schema, subject coverage, etc."
+                    required
+                  />
+                </label>
+
+                <label>
+                  Accession Number / Identifier:
+                  <input
+                    type="text"
+                    name="acc_no"
+                    value={marketplaceForm.acc_no}
+                    onChange={(e) => setMarketplaceForm({ ...marketplaceForm, acc_no: e.target.value })}
+                    placeholder="Optional unique code or ID"
+                  />
+                </label>
+
+                <input type="hidden" name="contact" value="admin@library.com" />
+                <input type="hidden" name="status" value="available" />
+
+                <button type="submit" style={{ marginTop: '10px' }}>
+                  📥 Upload to Marketplace
+                </button>
+
+                {uploadStatusMessage && (
+                  <p style={{
+                    marginTop: '15px',
+                    padding: '10px',
+                    borderRadius: '5px',
+                    backgroundColor: uploadStatusMessage.startsWith('✅') ? '#d4edda' : '#f8d7da',
+                    color: uploadStatusMessage.startsWith('✅') ? '#155724' : '#721c24',
+                    border: `1px solid ${uploadStatusMessage.startsWith('✅') ? '#c3e6cb' : '#f5c6cb'}`
+                  }}>
+                    {uploadStatusMessage}
+                  </p>
+                )}
               </form>
             </div>
           )}

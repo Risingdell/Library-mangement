@@ -184,7 +184,7 @@ const HomePage = () => {
         }
           .bar-title {
   color: #ffffff;
-  font-size: clamp(1rem, 2vw, 1.4rem);
+  font-size: clamp(1while userrem, 2vw, 1.4rem);
   font-weight: 700;
   letter-spacing: 1px;
   text-shadow: 0 0 10px rgba(59,130,246,0.6);

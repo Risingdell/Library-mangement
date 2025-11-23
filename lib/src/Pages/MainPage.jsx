@@ -29,6 +29,7 @@ const MainPage = () => {
   const [borrowingBookId, setBorrowingBookId] = useState(null);
   const [bookSearchQuery, setBookSearchQuery] = useState('');
   const [marketplaceSearchQuery, setMarketplaceSearchQuery] = useState('');
+  const [bookFormat, setBookFormat] = useState('hard_copy');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -238,6 +239,17 @@ const MainPage = () => {
       },
       'error'
     );
+  };
+
+  const handleDownloadBook = (id) => {
+    const url = API_URL + '/sell-books/download/' + id;
+    window.open(url, '_blank');
+    showSnackbar('success', 'Download started!');
+
+    // Reload the marketplace to update download count
+    setTimeout(() => {
+      reloadSellingBooks();
+    }, 1000);
   };
 
   const handleReturn = (bookId) => {
@@ -567,23 +579,66 @@ const MainPage = () => {
             <form className="sell-form" onSubmit={(e) => {
               e.preventDefault();
               const formData = new FormData(e.target);
-              const data = {
-                type: formData.get('type'),
-                title: formData.get('title'),
-                author: formData.get('author'),
-                description: formData.get('description'),
-                acc_no: formData.get('acc_no'),
-                contact: formData.get('contact'),
-                status: 'available'
-              };
+              const bookFormat = formData.get('book_format');
+
+              // Validate file upload for soft copy
+              if (bookFormat === 'soft_copy' && !formData.get('bookFile')?.name) {
+                setSellStatusMessage('❌ Please upload a file for soft copy books.');
+                return;
+              }
+
               const url = API_URL + '/sell-book';
-              axios.post(url, data, { withCredentials: true })
+              axios.post(url, formData, {
+                withCredentials: true,
+                headers: {
+                  'Content-Type': 'multipart/form-data'
+                }
+              })
                 .then(() => {
-                  setSellStatusMessage('✅ Book is Available for selling.');
+                  setSellStatusMessage(bookFormat === 'soft_copy' ? '✅ Soft copy book uploaded successfully!' : '✅ Book is Available for selling.');
                   e.target.reset();
+                  setBookFormat('hard_copy'); // Reset to default
                 })
-                .catch(() => setSellStatusMessage('❌ Failed to submit. Try again.'));
+                .catch((err) => {
+                  const errorMsg = err.response?.data?.message || 'Failed to submit. Try again.';
+                  setSellStatusMessage('❌ ' + errorMsg);
+                });
             }}>
+              <div className="form-group">
+                <label htmlFor="book_format">Book Format</label>
+                <select
+                  id="book_format"
+                  name="book_format"
+                  value={bookFormat}
+                  onChange={(e) => setBookFormat(e.target.value)}
+                  required
+                >
+                  <option value="hard_copy">Hard Copy (Physical Book)</option>
+                  <option value="soft_copy">Soft Copy (Digital File / PDF / e-book)</option>
+                </select>
+                <small style={{ display: 'block', marginTop: '4px', color: '#666' }}>
+                  {bookFormat === 'soft_copy'
+                    ? '📥 Digital books will be available for instant download by students'
+                    : '📖 Physical books will be available for request/buy by students'}
+                </small>
+              </div>
+
+              {bookFormat === 'soft_copy' && (
+                <div className="form-group">
+                  <label htmlFor="bookFile">Upload File (PDF, DOCX, EPUB, TXT)</label>
+                  <input
+                    type="file"
+                    id="bookFile"
+                    name="bookFile"
+                    accept=".pdf,.doc,.docx,.epub,.txt"
+                    required
+                  />
+                  <small style={{ display: 'block', marginTop: '4px', color: '#666' }}>
+                    Maximum file size: 50MB
+                  </small>
+                </div>
+              )}
+
               <div className="form-group">
                 <label htmlFor="type">Type of Material</label>
                 <select id="type" name="type" required>
@@ -615,7 +670,10 @@ const MainPage = () => {
                 <label htmlFor="contact">Contact Number</label>
                 <input type="tel" id="contact" name="contact" pattern="[0-9]{10}" maxLength="10" required placeholder="Enter your 10-digit mobile number" />
               </div>
-              <button type="submit" className="submit-btn">Submit for Selling</button>
+              <input type="hidden" name="status" value="available" />
+              <button type="submit" className="submit-btn">
+                {bookFormat === 'soft_copy' ? 'Upload Soft Copy' : 'Submit for Selling'}
+              </button>
               {sellStatusMessage && <p className="status-message">{sellStatusMessage}</p>}
             </form>
           </div>
@@ -646,6 +704,8 @@ const MainPage = () => {
                   const hasRequested = item.requesters?.some(r => r.id === user?.id);
                   const requestCount = item.request_count || 0;
 
+                  const isSoftCopy = item.book_format === 'soft_copy';
+
                   return (
                     <div key={item.id} className="book-card">
                       <div className="book-info">
@@ -654,13 +714,28 @@ const MainPage = () => {
                         <p className="book-remarks">{item.description}</p>
                         <div className="book-details">
                           <span className="book-acc">Acc. No: {item.acc_no}</span>
-                          <span className={'book-status status-' + item.status}>
-                            Status: {item.status}
+                          <span className={'book-format format-' + (item.book_format || 'hard_copy')}>
+                            {isSoftCopy ? '📥 Soft Copy' : '📖 Hard Copy'}
                           </span>
+                          {!isSoftCopy && (
+                            <span className={'book-status status-' + item.status}>
+                              Status: {item.status}
+                            </span>
+                          )}
                         </div>
 
-                        {/* Show request count for sellers */}
-                        {isSeller && requestCount > 0 && (
+                        {/* Show download count for soft copies */}
+                        {isSoftCopy && (
+                          <div className="download-info">
+                            <p className="download-count">📊 Downloads: {item.download_count || 0}</p>
+                            {item.uploaded_by === 'admin' && (
+                              <span className="admin-badge">👨‍💼 Uploaded by Admin</span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Show request count for sellers (only for hard copies) */}
+                        {!isSoftCopy && isSeller && requestCount > 0 && (
                           <div className="request-queue-info">
                             <p className="queue-count">📋 {requestCount} request(s)</p>
                             {item.requesters && item.requesters.length > 0 && (
@@ -681,45 +756,64 @@ const MainPage = () => {
                           </div>
                         )}
 
-                        {/* Contact info */}
-                        <a
-                          className="book-contact"
-                          href={'https://wa.me/' + (item.contact ? item.contact.replace(/\D/g, '') : '')}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          📞 Contact: {item.contact}
-                        </a>
+                        {/* Contact info - only show for hard copies */}
+                        {!isSoftCopy && (
+                          <a
+                            className="book-contact"
+                            href={'https://wa.me/' + (item.contact ? item.contact.replace(/\D/g, '') : '')}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            📞 Contact: {item.contact}
+                          </a>
+                        )}
                       </div>
 
                       <div className="action-buttons">
-                        {/* Seller actions */}
-                        {isSeller && item.status === 'available' && (
+                        {/* Soft Copy - Download button for everyone */}
+                        {isSoftCopy && (
+                          <button
+                            className="btn-download"
+                            onClick={() => handleDownloadBook(item.id)}
+                          >
+                            📥 Download {item.file_original_name || 'Book'}
+                          </button>
+                        )}
+
+                        {/* Soft Copy - Delete option for seller/admin */}
+                        {isSoftCopy && isSeller && (
+                          <button className="btn-delete" onClick={() => handleCancelSell(item.id)}>
+                            Remove from Marketplace
+                          </button>
+                        )}
+
+                        {/* Hard Copy - Seller actions */}
+                        {!isSoftCopy && isSeller && item.status === 'available' && (
                           <button className="btn-delete" onClick={() => handleCancelSell(item.id)}>
                             Remove Listing
                           </button>
                         )}
-                        {isSeller && item.status === 'requested' && (
+                        {!isSoftCopy && isSeller && item.status === 'requested' && (
                           <button className="btn-sold" onClick={() => handleMarkSold(item.id)}>
                             Mark as Sold
                           </button>
                         )}
-                        {isSeller && item.status === 'sold' && (
+                        {!isSoftCopy && isSeller && item.status === 'sold' && (
                           <span className="status-msg">⏳ Waiting for buyer to confirm receipt</span>
                         )}
 
-                        {/* Buyer actions */}
-                        {!isSeller && item.status === 'available' && !hasRequested && (
+                        {/* Hard Copy - Buyer actions */}
+                        {!isSoftCopy && !isSeller && item.status === 'available' && !hasRequested && (
                           <button className="btn-request" onClick={() => handleRequest(item.id)}>
                             Request to Buy
                           </button>
                         )}
-                        {!isSeller && item.status === 'requested' && !hasRequested && (
+                        {!isSoftCopy && !isSeller && item.status === 'requested' && !hasRequested && (
                           <button className="btn-request" onClick={() => handleRequest(item.id)}>
                             Join Queue
                           </button>
                         )}
-                        {!isSeller && hasRequested && item.status !== 'sold' && item.status !== 'completed' && (
+                        {!isSoftCopy && !isSeller && hasRequested && item.status !== 'sold' && item.status !== 'completed' && (
                           <div className="buyer-status">
                             {isActiveBuyer ? (
                               <span className="status-msg priority">✅ You are next in line!</span>
@@ -731,14 +825,14 @@ const MainPage = () => {
                             </button>
                           </div>
                         )}
-                        {isActiveBuyer && item.status === 'sold' && (
+                        {!isSoftCopy && isActiveBuyer && item.status === 'sold' && (
                           <button className="btn-confirm" onClick={() => handleConfirmReceive(item.id)}>
                             Confirm Received
                           </button>
                         )}
 
-                        {/* Transaction completed */}
-                        {item.status === 'completed' && (
+                        {/* Transaction completed - only for hard copies */}
+                        {!isSoftCopy && item.status === 'completed' && (
                           <div className="transaction-complete">
                             <span className="status-msg">✅ Transaction Completed</span>
                             {item.active_buyer_name && (
