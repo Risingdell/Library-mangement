@@ -114,25 +114,21 @@ const MainPage = () => {
     }
 
     setBorrowingBookId(bookId);
-    const url = API_URL + '/borrow';
-    axios.post(url, { book_id: bookId }, { withCredentials: true })
+    // Use new branch book request API that requires admin confirmation
+    const url = API_URL + '/api/branch-books/request';
+    axios.post(url, { bookId }, { withCredentials: true })
       .then(res => {
-        showSnackbar('success', res.data.message);
+        showSnackbar('success', res.data.message || 'Book request submitted! Waiting for admin approval.');
+        // Refresh available books list
         if (activeTab === 'books') {
           const booksUrl = API_URL + '/books';
           axios.get(booksUrl)
             .then(res => setAvailableBooks(res.data));
         }
-        // Refresh borrowed books to update count
-        if (activeTab === 'borrowed') {
-          const borrowedUrl = API_URL + '/borrowed-books';
-          axios.get(borrowedUrl, { withCredentials: true })
-            .then(res => setBorrowedBooks(res.data));
-        }
       })
       .catch(err => {
-        console.error('Borrow failed', err);
-        const errorMessage = err.response?.data?.message || 'Failed to borrow book';
+        console.error('Request failed', err);
+        const errorMessage = err.response?.data?.message || 'Failed to request book';
         showSnackbar('error', errorMessage);
       })
       .finally(() => {
@@ -464,8 +460,8 @@ const MainPage = () => {
                       cursor: currentlyBorrowed >= 2 ? 'not-allowed' : 'pointer'
                     }}
                   >
-                    {borrowingBookId === book.id ? 'Borrowing...' :
-                     currentlyBorrowed >= 2 ? 'Limit Reached' : 'Borrow Book'}
+                    {borrowingBookId === book.id ? 'Requesting...' :
+                     currentlyBorrowed >= 2 ? 'Limit Reached' : 'Request Book'}
                   </button>
                 </div>
               ))}

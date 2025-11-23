@@ -41,6 +41,8 @@ const AdminDashboard = () => {
   });
   const [uploadStatusMessage, setUploadStatusMessage] = useState('');
   const [purchaseRequests, setPurchaseRequests] = useState([]);
+  const [branchBookRequests, setBranchBookRequests] = useState([]);
+  const [approvedBranchRequests, setApprovedBranchRequests] = useState([]);
 
   // Fetch admin on load
   useEffect(() => {
@@ -100,13 +102,19 @@ const AdminDashboard = () => {
         } else if (activeTab === 'purchase-requests') {
           res = await axios.get(`${API_URL}/api/admin/purchase-requests`, { withCredentials: true });
           if (res) setPurchaseRequests(res.data);
+        } else if (activeTab === 'branch-book-requests') {
+          res = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`, { withCredentials: true });
+          if (res) setBranchBookRequests(res.data);
+        } else if (activeTab === 'branch-book-handover') {
+          res = await axios.get(`${API_URL}/api/admin/branch-books/approved-requests`, { withCredentials: true });
+          if (res) setApprovedBranchRequests(res.data);
         }
       } catch (err) {
         console.error('Failed to fetch data:', err.response?.data?.message || err.message);
       }
     };
 
-    if (activeTab === 'borrowed' || activeTab === 'expired' || activeTab === 'pending-returns' || activeTab === 'history' || activeTab === 'registration-requests' || activeTab === 'members' || activeTab === 'purchase-requests') {
+    if (activeTab === 'borrowed' || activeTab === 'expired' || activeTab === 'pending-returns' || activeTab === 'history' || activeTab === 'registration-requests' || activeTab === 'members' || activeTab === 'purchase-requests' || activeTab === 'branch-book-requests' || activeTab === 'branch-book-handover') {
       fetchBorrowedBooks();
     }
   }, [activeTab]);
@@ -280,6 +288,76 @@ const AdminDashboard = () => {
     }
   };
 
+  // Branch Book Request Handlers
+  const handleApproveBranchRequest = async (requestId) => {
+    showConfirmSnackbar(
+      'Approve this branch book request?',
+      async () => {
+        try {
+          const res = await axios.post(
+            `${API_URL}/api/admin/branch-books/approve`,
+            { requestId },
+            { withCredentials: true }
+          );
+          showSnackbar('success', res.data.message || 'Request approved successfully');
+          // Refresh requests list
+          const updatedRes = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`, { withCredentials: true });
+          setBranchBookRequests(updatedRes.data);
+        } catch (err) {
+          console.error('Approve failed:', err);
+          showSnackbar('error', err.response?.data?.message || 'Failed to approve request');
+        }
+      },
+      'success'
+    );
+  };
+
+  const handleRejectBranchRequest = async (requestId) => {
+    const reason = prompt('Enter rejection reason:');
+    if (!reason) {
+      showSnackbar('warning', 'Rejection cancelled - reason is required');
+      return;
+    }
+
+    try {
+      const res = await axios.post(
+        `${API_URL}/api/admin/branch-books/reject`,
+        { requestId, rejectionReason: reason },
+        { withCredentials: true }
+      );
+      showSnackbar('success', res.data.message || 'Request rejected successfully');
+      // Refresh requests list
+      const updatedRes = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`, { withCredentials: true });
+      setBranchBookRequests(updatedRes.data);
+    } catch (err) {
+      console.error('Reject failed:', err);
+      showSnackbar('error', err.response?.data?.message || 'Failed to reject request');
+    }
+  };
+
+  const handleConfirmBranchHandover = async (requestId) => {
+    showConfirmSnackbar(
+      'Confirm that you have physically handed over this book to the student?',
+      async () => {
+        try {
+          const res = await axios.post(
+            `${API_URL}/api/admin/branch-books/confirm-handover`,
+            { requestId },
+            { withCredentials: true }
+          );
+          showSnackbar('success', res.data.message || 'Handover confirmed! Book assigned to student.');
+          // Refresh approved requests list
+          const updatedRes = await axios.get(`${API_URL}/api/admin/branch-books/approved-requests`, { withCredentials: true });
+          setApprovedBranchRequests(updatedRes.data);
+        } catch (err) {
+          console.error('Confirm handover failed:', err);
+          showSnackbar('error', err.response?.data?.message || 'Failed to confirm handover');
+        }
+      },
+      'success'
+    );
+  };
+
   if (loading) {
     return <BookLoader message="Loading admin dashboard..." />;
   }
@@ -361,6 +439,20 @@ const AdminDashboard = () => {
             </span>
             <span className="nav-text">Book Purchase Requests</span>
           </button>
+          <button className={`nav-item${activeTab === 'branch-book-requests' ? ' active' : ''}`} onClick={() => handleTabChange('branch-book-requests')}>
+            <span className="nav-icon">📋</span>
+            <span className="nav-text">Branch Book Requests</span>
+            {branchBookRequests.length > 0 && (
+              <span className="badge">{branchBookRequests.length}</span>
+            )}
+          </button>
+          <button className={`nav-item${activeTab === 'branch-book-handover' ? ' active' : ''}`} onClick={() => handleTabChange('branch-book-handover')}>
+            <span className="nav-icon">📖</span>
+            <span className="nav-text">Confirm Handover</span>
+            {approvedBranchRequests.length > 0 && (
+              <span className="badge">{approvedBranchRequests.length}</span>
+            )}
+          </button>
           <button className={`nav-item${activeTab === 'add' ? ' active' : ''}`} onClick={() => handleTabChange('add')}>
             <span className="nav-icon">
               <img src="/add.svg" alt="Add Books" style={{ width: '20px', height: '20px' }} />
@@ -401,6 +493,8 @@ const AdminDashboard = () => {
             {activeTab === 'pending-returns' && 'Pending Returns'}
             {activeTab === 'history' && 'Borrowing History'}
             {activeTab === 'purchase-requests' && 'Book Purchase Requests'}
+            {activeTab === 'branch-book-requests' && 'Branch Book Requests (Pending Approval)'}
+            {activeTab === 'branch-book-handover' && 'Confirm Book Handover'}
             {activeTab === 'add' && 'Add Books'}
             {activeTab === 'marketplace-upload' && 'Upload Soft Copy Books to Marketplace'}
           </h1>
@@ -1029,6 +1123,188 @@ const AdminDashboard = () => {
                     Only click "Confirm Handover" after you have personally verified that the student has received the physical book.
                     This action is irreversible and will permanently assign the book to the student.
                   </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'branch-book-requests' && (
+            <div className="dashboard-content">
+              <h2 className="section-title">Branch Book Requests (Pending Approval)</h2>
+              <p style={{ marginBottom: '20px', color: '#666' }}>
+                Review and approve student requests for branch library books. Once approved, the request moves to the handover confirmation stage.
+              </p>
+
+              {branchBookRequests.length === 0 ? (
+                <div className="empty-state">
+                  <p>✅ No pending branch book requests</p>
+                </div>
+              ) : (
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Book Title</th>
+                      <th>Student</th>
+                      <th>USN</th>
+                      <th>Acc No.</th>
+                      <th>Requested Date</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {branchBookRequests.map((request) => (
+                      <tr key={request.request_id}>
+                        <td>
+                          <strong>{request.title}</strong>
+                          {request.author && (
+                            <div style={{ fontSize: '0.9em', color: '#666' }}>
+                              by {request.author}
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          {request.student_first_name} {request.student_last_name}
+                          <div style={{ fontSize: '0.9em', color: '#666' }}>
+                            @{request.student_username}
+                          </div>
+                        </td>
+                        <td>{request.student_usn}</td>
+                        <td>{request.acc_no}</td>
+                        <td>
+                          {new Date(request.requested_at).toLocaleDateString()}
+                          <div style={{ fontSize: '0.85em', color: '#888' }}>
+                            {new Date(request.requested_at).toLocaleTimeString()}
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{
+                            color: '#f59e0b',
+                            fontWeight: 'bold',
+                            padding: '4px 8px',
+                            background: '#fef3c7',
+                            borderRadius: '4px',
+                            fontSize: '0.9em'
+                          }}>
+                            ⏳ Pending Approval
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              className="action-btn success"
+                              onClick={() => handleApproveBranchRequest(request.request_id)}
+                              title="Approve request"
+                            >
+                              ✅ Approve
+                            </button>
+                            <button
+                              className="action-btn danger"
+                              onClick={() => handleRejectBranchRequest(request.request_id)}
+                              title="Reject request"
+                            >
+                              ❌ Reject
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'branch-book-handover' && (
+            <div className="dashboard-content">
+              <h2 className="section-title">Confirm Book Handover</h2>
+              <p style={{ marginBottom: '20px', color: '#666' }}>
+                <strong>⚠️ Important:</strong> Only click "Confirm Handover" AFTER you have physically given the book to the student.
+                This will permanently assign the book to the student and remove it from available books.
+              </p>
+
+              {approvedBranchRequests.length === 0 ? (
+                <div className="empty-state">
+                  <p>✅ No approved requests awaiting handover</p>
+                </div>
+              ) : (
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Book Title</th>
+                      <th>Student</th>
+                      <th>USN</th>
+                      <th>Acc No.</th>
+                      <th>Approved Date</th>
+                      <th>Approved By</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {approvedBranchRequests.map((request) => (
+                      <tr key={request.request_id}>
+                        <td>
+                          <strong>{request.title}</strong>
+                          {request.author && (
+                            <div style={{ fontSize: '0.9em', color: '#666' }}>
+                              by {request.author}
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          {request.student_first_name} {request.student_last_name}
+                          <div style={{ fontSize: '0.9em', color: '#666' }}>
+                            @{request.student_username}
+                          </div>
+                          <div style={{ fontSize: '0.85em', color: '#888' }}>
+                            📧 {request.student_email}
+                          </div>
+                        </td>
+                        <td>{request.student_usn}</td>
+                        <td>{request.acc_no}</td>
+                        <td>
+                          {new Date(request.approved_at).toLocaleDateString()}
+                          <div style={{ fontSize: '0.85em', color: '#888' }}>
+                            {new Date(request.approved_at).toLocaleTimeString()}
+                          </div>
+                        </td>
+                        <td>
+                          Admin #{request.approved_by_admin}
+                        </td>
+                        <td>
+                          <button
+                            className="action-btn success"
+                            onClick={() => handleConfirmBranchHandover(request.request_id)}
+                            title="Confirm that book has been handed over to student"
+                            style={{
+                              background: '#10b981',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            ✅ Confirm Handover
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              {approvedBranchRequests.length > 0 && (
+                <div style={{
+                  marginTop: '20px',
+                  padding: '15px',
+                  background: '#fef3c7',
+                  borderRadius: '8px',
+                  border: '1px solid #f59e0b'
+                }}>
+                  <strong>📝 Handover Checklist:</strong>
+                  <ol style={{ marginTop: '10px', paddingLeft: '20px' }}>
+                    <li>Verify student identity (check USN)</li>
+                    <li>Physically hand over the book to the student</li>
+                    <li>Click "Confirm Handover" button above</li>
+                    <li>Book will be automatically assigned to student's "My Books"</li>
+                  </ol>
                 </div>
               )}
             </div>
