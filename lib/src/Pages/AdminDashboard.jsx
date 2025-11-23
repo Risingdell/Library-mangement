@@ -40,6 +40,7 @@ const AdminDashboard = () => {
     contact: 'admin@library.com'
   });
   const [uploadStatusMessage, setUploadStatusMessage] = useState('');
+  const [purchaseRequests, setPurchaseRequests] = useState([]);
 
   // Fetch admin on load
   useEffect(() => {
@@ -96,13 +97,16 @@ const AdminDashboard = () => {
         } else if (activeTab === 'members') {
           res = await axios.get(`${API_URL}/api/admin/members`, { withCredentials: true });
           if (res) setMembers(res.data);
+        } else if (activeTab === 'purchase-requests') {
+          res = await axios.get(`${API_URL}/api/admin/purchase-requests`, { withCredentials: true });
+          if (res) setPurchaseRequests(res.data);
         }
       } catch (err) {
         console.error('Failed to fetch data:', err.response?.data?.message || err.message);
       }
     };
 
-    if (activeTab === 'borrowed' || activeTab === 'expired' || activeTab === 'pending-returns' || activeTab === 'history' || activeTab === 'registration-requests' || activeTab === 'members') {
+    if (activeTab === 'borrowed' || activeTab === 'expired' || activeTab === 'pending-returns' || activeTab === 'history' || activeTab === 'registration-requests' || activeTab === 'members' || activeTab === 'purchase-requests') {
       fetchBorrowedBooks();
     }
   }, [activeTab]);
@@ -234,6 +238,48 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleConfirmBookReceived = async (requestId) => {
+    showConfirmSnackbar(
+      'Confirm that the student has physically received this book?',
+      async () => {
+        try {
+          const res = await axios.post(
+            `${API_URL}/api/admin/confirm-book-received`,
+            { request_id: requestId },
+            { withCredentials: true }
+          );
+          showSnackbar('success', res.data.message);
+          // Refresh purchase requests list
+          const updatedRes = await axios.get(`${API_URL}/api/admin/purchase-requests`, { withCredentials: true });
+          setPurchaseRequests(updatedRes.data);
+        } catch (err) {
+          console.error('Confirm failed:', err);
+          showSnackbar('error', err.response?.data?.message || 'Failed to confirm book handover');
+        }
+      },
+      'success'
+    );
+  };
+
+  const handleRejectPurchaseRequest = async (requestId) => {
+    const reason = prompt('Enter rejection reason (optional):');
+
+    try {
+      const res = await axios.post(
+        `${API_URL}/api/admin/reject-purchase-request`,
+        { request_id: requestId, rejection_reason: reason },
+        { withCredentials: true }
+      );
+      showSnackbar('success', res.data.message);
+      // Refresh purchase requests list
+      const updatedRes = await axios.get(`${API_URL}/api/admin/purchase-requests`, { withCredentials: true });
+      setPurchaseRequests(updatedRes.data);
+    } catch (err) {
+      console.error('Reject failed:', err);
+      showSnackbar('error', err.response?.data?.message || 'Failed to reject purchase request');
+    }
+  };
+
   if (loading) {
     return <BookLoader message="Loading admin dashboard..." />;
   }
@@ -309,6 +355,12 @@ const AdminDashboard = () => {
             </span>
             <span className="nav-text">Borrowing History</span>
           </button>
+          <button className={`nav-item${activeTab === 'purchase-requests' ? ' active' : ''}`} onClick={() => handleTabChange('purchase-requests')}>
+            <span className="nav-icon">
+              📦
+            </span>
+            <span className="nav-text">Book Purchase Requests</span>
+          </button>
           <button className={`nav-item${activeTab === 'add' ? ' active' : ''}`} onClick={() => handleTabChange('add')}>
             <span className="nav-icon">
               <img src="/add.svg" alt="Add Books" style={{ width: '20px', height: '20px' }} />
@@ -348,6 +400,7 @@ const AdminDashboard = () => {
             {activeTab === 'expired' && 'Expired Books'}
             {activeTab === 'pending-returns' && 'Pending Returns'}
             {activeTab === 'history' && 'Borrowing History'}
+            {activeTab === 'purchase-requests' && 'Book Purchase Requests'}
             {activeTab === 'add' && 'Add Books'}
             {activeTab === 'marketplace-upload' && 'Upload Soft Copy Books to Marketplace'}
           </h1>
