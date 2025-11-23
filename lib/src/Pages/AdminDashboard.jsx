@@ -127,12 +127,12 @@ const AdminDashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/admin/add-book', form);
+      await axios.post(`${API_URL}/api/admin/add-book`, form, { withCredentials: true });
       showSnackbar('success', 'Book added successfully!');
       setForm(initialFormState);
     } catch (err) {
       console.error(err);
-      showSnackbar('error', 'Error adding book');
+      showSnackbar('error', err.response?.data?.message || 'Error adding book');
     }
   };
 
