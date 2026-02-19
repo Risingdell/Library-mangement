@@ -82,10 +82,10 @@ const AdminDashboard = () => {
       try {
         let res;
         if (activeTab === 'borrowed') {
-          res = await axios.get(`${API_URL}/api/admin/borrowed-books`);
+          res = await axios.get(`${API_URL}/api/admin/borrowed-books`, { withCredentials: true });
           if (res) setBorrowedBooks(res.data);
         } else if (activeTab === 'expired') {
-          res = await axios.get(`${API_URL}/api/admin/expired-books`);
+          res = await axios.get(`${API_URL}/api/admin/expired-books`, { withCredentials: true });
           if (res) setBorrowedBooks(res.data);
         } else if (activeTab === 'pending-returns') {
           res = await axios.get(`${API_URL}/api/admin/pending-returns`, { withCredentials: true });
