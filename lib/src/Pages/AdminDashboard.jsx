@@ -48,8 +48,7 @@ const AdminDashboard = () => {
   // Fetch admin on load
   useEffect(() => {
     console.log('📊 AdminDashboard mounting...');
-    // Setup JWT interceptor on component mount
-    jwtService.setupInterceptor();
+    // JWT interceptor already set up in main.jsx - don't call again!
 
     const fetchAdmin = async () => {
       console.log('📊 fetchAdmin function called');
