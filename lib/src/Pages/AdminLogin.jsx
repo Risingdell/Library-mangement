@@ -23,19 +23,29 @@ const AdminLogin = () => {
     try {
       const res = await axios.post(`${API_URL}/api/admin/login`, { username, password });
 
+      console.log('🔐 Login Response:', res.data);
+
       // Extract token and refreshToken from new response format
       if (res.data.success && res.data.data?.token) {
         const { token, refreshToken } = res.data.data;
 
+        console.log('✅ Token received:', token?.substring(0, 50) + '...');
+        console.log('✅ Refresh token received:', refreshToken?.substring(0, 50) + '...');
+
         // Store tokens in localStorage
         jwtService.setTokens(token, refreshToken);
+
+        console.log('✅ Tokens stored in localStorage');
+        console.log('✅ Token exists:', jwtService.isAuthenticated());
 
         // Navigate to dashboard
         navigate('/admin-dashboard');
       } else {
+        console.error('❌ Unexpected response format:', res.data);
         setError('Unexpected response format from server');
       }
     } catch (err) {
+      console.error('❌ Login error:', err);
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);

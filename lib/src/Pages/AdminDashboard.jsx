@@ -47,35 +47,50 @@ const AdminDashboard = () => {
 
   // Fetch admin on load
   useEffect(() => {
+    console.log('📊 AdminDashboard mounting...');
     // Setup JWT interceptor on component mount
     jwtService.setupInterceptor();
 
     const fetchAdmin = async () => {
+      console.log('📊 fetchAdmin function called');
+
       // Check if token exists
-      if (!jwtService.isAuthenticated()) {
+      const hasToken = jwtService.isAuthenticated();
+      console.log('✅ Token exists:', hasToken);
+      if (!hasToken) {
+        console.error('❌ No token found - redirecting to login');
         window.location.href = '/admin-login';
         return;
       }
+
+      console.log('📋 Token value:', jwtService.getToken()?.substring(0, 50) + '...');
 
       // Minimum 5 seconds loading time for book animation
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 5000));
 
       try {
+        console.log('🔄 Calling /api/admin/me');
         const [res] = await Promise.all([
           axios.get(`${API_URL}/api/admin/me`),
           minLoadingTime
         ]);
 
+        console.log('✅ Admin data received:', res.data);
+
         if (res.data && res.data.id) {
           setAdmin(res.data);
+          console.log('✅ Admin dashboard loaded');
         } else {
-          console.error('Admin data format unexpected:', res.data);
+          console.error('❌ Admin data format unexpected:', res.data);
           setAdmin(null);
           // Redirect to login if no valid admin data
           window.location.href = '/admin-login';
         }
       } catch (err) {
-        console.error('Failed to fetch admin profile:', err.response?.data?.message || err.message);
+        console.error('❌ Failed to fetch admin profile');
+        console.error('   Status:', err.response?.status);
+        console.error('   Data:', err.response?.data);
+        console.error('   Message:', err.message);
         // Clear tokens on auth failure
         jwtService.clearTokens();
         // Wait for animation to complete before redirecting
