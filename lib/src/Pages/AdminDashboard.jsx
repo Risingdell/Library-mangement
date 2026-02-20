@@ -4,6 +4,7 @@ import './AdminDashboard.css';
 import BookLoader from '../Components/BookLoader';
 import { useSnackbar } from '../Context/SnackbarContext';
 import { useTheme } from '../Context/ThemeContext';
+import jwtService from '../services/jwtService';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -46,13 +47,22 @@ const AdminDashboard = () => {
 
   // Fetch admin on load
   useEffect(() => {
+    // Setup JWT interceptor on component mount
+    jwtService.setupInterceptor();
+
     const fetchAdmin = async () => {
+      // Check if token exists
+      if (!jwtService.isAuthenticated()) {
+        window.location.href = '/admin-login';
+        return;
+      }
+
       // Minimum 5 seconds loading time for book animation
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 5000));
 
       try {
         const [res] = await Promise.all([
-          axios.get(`${API_URL}/api/admin/me`, { withCredentials: true }),
+          axios.get(`${API_URL}/api/admin/me`),
           minLoadingTime
         ]);
 
@@ -66,6 +76,8 @@ const AdminDashboard = () => {
         }
       } catch (err) {
         console.error('Failed to fetch admin profile:', err.response?.data?.message || err.message);
+        // Clear tokens on auth failure
+        jwtService.clearTokens();
         // Wait for animation to complete before redirecting
         await minLoadingTime;
         window.location.href = '/admin-login';
@@ -82,31 +94,31 @@ const AdminDashboard = () => {
       try {
         let res;
         if (activeTab === 'borrowed') {
-          res = await axios.get(`${API_URL}/api/admin/borrowed-books`, { withCredentials: true });
+          res = await axios.get(`${API_URL}/api/admin/borrowed-books`);
           if (res) setBorrowedBooks(res.data);
         } else if (activeTab === 'expired') {
-          res = await axios.get(`${API_URL}/api/admin/expired-books`, { withCredentials: true });
+          res = await axios.get(`${API_URL}/api/admin/expired-books`);
           if (res) setBorrowedBooks(res.data);
         } else if (activeTab === 'pending-returns') {
-          res = await axios.get(`${API_URL}/api/admin/pending-returns`, { withCredentials: true });
+          res = await axios.get(`${API_URL}/api/admin/pending-returns`);
           if (res) setPendingReturns(res.data);
         } else if (activeTab === 'history') {
-          res = await axios.get(`${API_URL}/api/admin/borrowing-history`, { withCredentials: true });
+          res = await axios.get(`${API_URL}/api/admin/borrowing-history`);
           if (res) setBorrowingHistory(res.data);
         } else if (activeTab === 'registration-requests') {
-          res = await axios.get(`${API_URL}/api/admin/pending-users`, { withCredentials: true });
+          res = await axios.get(`${API_URL}/api/admin/pending-users`);
           if (res) setPendingUsers(res.data);
         } else if (activeTab === 'members') {
-          res = await axios.get(`${API_URL}/api/admin/members`, { withCredentials: true });
+          res = await axios.get(`${API_URL}/api/admin/members`);
           if (res) setMembers(res.data);
         } else if (activeTab === 'purchase-requests') {
-          res = await axios.get(`${API_URL}/api/admin/purchase-requests`, { withCredentials: true });
+          res = await axios.get(`${API_URL}/api/admin/purchase-requests`);
           if (res) setPurchaseRequests(res.data);
         } else if (activeTab === 'branch-book-requests') {
-          res = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`, { withCredentials: true });
+          res = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`);
           if (res) setBranchBookRequests(res.data);
         } else if (activeTab === 'branch-book-handover') {
-          res = await axios.get(`${API_URL}/api/admin/branch-books/approved-requests`, { withCredentials: true });
+          res = await axios.get(`${API_URL}/api/admin/branch-books/approved-requests`);
           if (res) setApprovedBranchRequests(res.data);
         }
       } catch (err) {
@@ -127,7 +139,7 @@ const AdminDashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/api/admin/add-book`, form, { withCredentials: true });
+      await axios.post(`${API_URL}/api/admin/add-book`, form);
       showSnackbar('success', 'Book added successfully!');
       setForm(initialFormState);
     } catch (err) {
@@ -143,6 +155,8 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     setAdmin(null);
     sessionStorage.removeItem('admin');
+    // Clear JWT tokens
+    jwtService.clearTokens();
     window.location.href = '/admin-login';
   };
 
@@ -161,12 +175,11 @@ const AdminDashboard = () => {
         try {
           const res = await axios.post(
             `${API_URL}/api/admin/approve-return`,
-            { borrow_id: borrowId },
-            { withCredentials: true }
+            { borrow_id: borrowId }
           );
           showSnackbar('success', res.data.message);
           // Refresh pending returns list
-          const updatedRes = await axios.get(`${API_URL}/api/admin/pending-returns`, { withCredentials: true });
+          const updatedRes = await axios.get(`${API_URL}/api/admin/pending-returns`);
           setPendingReturns(updatedRes.data);
         } catch (err) {
           console.error('Approve failed:', err);
@@ -188,11 +201,10 @@ const AdminDashboard = () => {
       const res = await axios.post(
         `${API_URL}/api/admin/reject-return`,
         { borrow_id: borrowId, reason: reason.trim() },
-        { withCredentials: true }
-      );
+              );
       showSnackbar('success', res.data.message);
       // Refresh pending returns list
-      const updatedRes = await axios.get(`${API_URL}/api/admin/pending-returns`, { withCredentials: true });
+      const updatedRes = await axios.get(`${API_URL}/api/admin/pending-returns`);
       setPendingReturns(updatedRes.data);
     } catch (err) {
       console.error('Reject failed:', err);
@@ -208,11 +220,10 @@ const AdminDashboard = () => {
           const res = await axios.post(
             `${API_URL}/api/admin/approve-user`,
             { user_id: userId },
-            { withCredentials: true }
-          );
+                      );
           showSnackbar('success', res.data.message);
           // Refresh pending users list
-          const updatedRes = await axios.get(`${API_URL}/api/admin/pending-users`, { withCredentials: true });
+          const updatedRes = await axios.get(`${API_URL}/api/admin/pending-users`);
           setPendingUsers(updatedRes.data);
         } catch (err) {
           console.error('Approve failed:', err);
@@ -234,11 +245,10 @@ const AdminDashboard = () => {
       const res = await axios.post(
         `${API_URL}/api/admin/reject-user`,
         { user_id: userId, reason: reason.trim() },
-        { withCredentials: true }
-      );
+              );
       showSnackbar('success', res.data.message);
       // Refresh pending users list
-      const updatedRes = await axios.get(`${API_URL}/api/admin/pending-users`, { withCredentials: true });
+      const updatedRes = await axios.get(`${API_URL}/api/admin/pending-users`);
       setPendingUsers(updatedRes.data);
     } catch (err) {
       console.error('Reject failed:', err);
@@ -254,11 +264,10 @@ const AdminDashboard = () => {
           const res = await axios.post(
             `${API_URL}/api/admin/confirm-book-received`,
             { request_id: requestId },
-            { withCredentials: true }
-          );
+                      );
           showSnackbar('success', res.data.message);
           // Refresh purchase requests list
-          const updatedRes = await axios.get(`${API_URL}/api/admin/purchase-requests`, { withCredentials: true });
+          const updatedRes = await axios.get(`${API_URL}/api/admin/purchase-requests`);
           setPurchaseRequests(updatedRes.data);
         } catch (err) {
           console.error('Confirm failed:', err);
@@ -276,11 +285,10 @@ const AdminDashboard = () => {
       const res = await axios.post(
         `${API_URL}/api/admin/reject-purchase-request`,
         { request_id: requestId, rejection_reason: reason },
-        { withCredentials: true }
-      );
+              );
       showSnackbar('success', res.data.message);
       // Refresh purchase requests list
-      const updatedRes = await axios.get(`${API_URL}/api/admin/purchase-requests`, { withCredentials: true });
+      const updatedRes = await axios.get(`${API_URL}/api/admin/purchase-requests`);
       setPurchaseRequests(updatedRes.data);
     } catch (err) {
       console.error('Reject failed:', err);
@@ -297,11 +305,10 @@ const AdminDashboard = () => {
           const res = await axios.post(
             `${API_URL}/api/admin/branch-books/approve`,
             { requestId },
-            { withCredentials: true }
-          );
+                      );
           showSnackbar('success', res.data.message || 'Request approved successfully');
           // Refresh requests list
-          const updatedRes = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`, { withCredentials: true });
+          const updatedRes = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`);
           setBranchBookRequests(updatedRes.data);
         } catch (err) {
           console.error('Approve failed:', err);
@@ -323,11 +330,10 @@ const AdminDashboard = () => {
       const res = await axios.post(
         `${API_URL}/api/admin/branch-books/reject`,
         { requestId, rejectionReason: reason },
-        { withCredentials: true }
-      );
+              );
       showSnackbar('success', res.data.message || 'Request rejected successfully');
       // Refresh requests list
-      const updatedRes = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`, { withCredentials: true });
+      const updatedRes = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`);
       setBranchBookRequests(updatedRes.data);
     } catch (err) {
       console.error('Reject failed:', err);
@@ -343,11 +349,10 @@ const AdminDashboard = () => {
           const res = await axios.post(
             `${API_URL}/api/admin/branch-books/confirm-handover`,
             { requestId },
-            { withCredentials: true }
-          );
+                      );
           showSnackbar('success', res.data.message || 'Handover confirmed! Book assigned to student.');
           // Refresh approved requests list
-          const updatedRes = await axios.get(`${API_URL}/api/admin/branch-books/approved-requests`, { withCredentials: true });
+          const updatedRes = await axios.get(`${API_URL}/api/admin/branch-books/approved-requests`);
           setApprovedBranchRequests(updatedRes.data);
         } catch (err) {
           console.error('Confirm handover failed:', err);
@@ -1331,7 +1336,6 @@ const AdminDashboard = () => {
 
                 const url = API_URL + '/sell-book';
                 axios.post(url, formData, {
-                  withCredentials: true,
                   headers: {
                     'Content-Type': 'multipart/form-data'
                   }

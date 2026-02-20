@@ -8,6 +8,10 @@ import { UserProvider } from './Context/UserContext.jsx'
 import { AuthProvider } from './Context/AuthProvider.jsx'
 import { SnackbarProvider } from './Context/SnackbarContext.jsx'
 import { ThemeProvider } from './Context/ThemeContext.jsx'
+import jwtService from './services/jwtService.js'
+
+// Initialize JWT interceptor when app starts
+jwtService.setupInterceptor();
 
 
 createRoot(document.getElementById('root')).render(

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import './AdminLogin.css';
 import sitLogo from '../assets/sit2.jpg';
 import deepRightImg from '../assets/branch.png';
+import jwtService from '../services/jwtService';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -11,20 +12,33 @@ const AdminLogin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     try {
-      const res = await axios.post(`${API_URL}/api/admin/login`,
-        { username, password },
-        { withCredentials: true }
-      );
-      navigate('/admin-dashboard');
+      const res = await axios.post(`${API_URL}/api/admin/login`, { username, password });
+
+      // Extract token and refreshToken from new response format
+      if (res.data.success && res.data.data?.token) {
+        const { token, refreshToken } = res.data.data;
+
+        // Store tokens in localStorage
+        jwtService.setTokens(token, refreshToken);
+
+        // Navigate to dashboard
+        navigate('/admin-dashboard');
+      } else {
+        setError('Unexpected response format from server');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,8 +78,8 @@ const AdminLogin = () => {
             />
           </div>
 
-          <button type="submit" className="admin-login-button">
-            Login to Dashboard
+          <button type="submit" className="admin-login-button" disabled={loading}>
+            {loading ? 'Logging in...' : 'Login to Dashboard'}
           </button>
         </form>
 

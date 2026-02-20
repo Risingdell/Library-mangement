@@ -7,6 +7,9 @@ import "./Login.css";
 import { useSnackbar } from "../Context/SnackbarContext";
 import sitLogo from '../assets/sit2.jpg';
 import deepRightImg from '../assets/branch.png';
+import jwtService from '../services/jwtService';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function Login() {
   const { setUser } = useContext(UserContext);
@@ -14,31 +17,46 @@ function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginStatus, setLoginStatus] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const login = () => {
-  axios.post(`${import.meta.env.VITE_API_URL}/login`, {
+  const login = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API_URL}/login`, {
+        username,
+        password
+      });
 
-    username,
-      password
-    }, {
-      withCredentials: true
-    })
-    .then((response) => {
-      if (response.data.username) {
-        setUser({ username: response.data.username });
-        setLoginStatus(`Welcome, ${response.data.username}!`);
+      // Extract token and refreshToken from new response format
+      if (response.data.success && response.data.data?.token) {
+        const { token, refreshToken, user } = response.data.data;
+
+        // Store tokens in localStorage
+        jwtService.setTokens(token, refreshToken);
+
+        // Update user context
+        setUser({ username: user.username, id: user.id, email: user.email });
+        setLoginStatus(`Welcome, ${user.username}!`);
+
+        // Clear form
+        setUsername('');
+        setPassword('');
+
+        // Navigate to main page
         navigate('/main');
-      } else if (response.data.message) {
-        setLoginStatus(response.data.message);
+      } else {
+        setLoginStatus('Unexpected response format from server');
+        showSnackbar('error', 'Login failed. Please try again.');
       }
-      setUsername('');
-      setPassword('');
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error("Error logging in:", error);
-      showSnackbar('error', 'Login failed. Please check your credentials.');
-    });
+      const errorMessage = error.response?.data?.message || 'Login failed. Please check your credentials.';
+      setLoginStatus(errorMessage);
+      showSnackbar('error', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -74,8 +92,8 @@ function Login() {
             />
           </div>
 
-          <button type="submit" className="login-button">
-            Log in
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? 'Logging in...' : 'Log in'}
           </button>
         </form>
 
