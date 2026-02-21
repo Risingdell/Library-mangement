@@ -437,7 +437,7 @@ const MainPage = () => {
                     ℹ️ You have borrowed {currentlyBorrowed}/2 books.
                     You can borrow {2 - currentlyBorrowed} more {2 - currentlyBorrowed === 1 ? 'book' : 'books'}.
                   </>
-                )}
+                )}/
               </div>
             )}
             {filteredBooks.length === 0 ? (
@@ -1136,3 +1136,5 @@ const MainPage = () => {
 };
 
 export default MainPage;
+
+//checking git work
