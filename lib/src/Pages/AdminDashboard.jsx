@@ -68,30 +68,29 @@ const AdminDashboard = () => {
       const minLoadingTime = new Promise(resolve => setTimeout(resolve, 5000));
 
       try {
-        console.log('🔄 Calling /api/admin/me');
+        console.log('🔄 [DASHBOARD] Fetching admin profile from /api/admin/me');
         const [res] = await Promise.all([
           axios.get(`${API_URL}/api/admin/me`),
           minLoadingTime
         ]);
 
-        console.log('✅ Admin data received:', res.data);
+        console.log('✅ [DASHBOARD] Admin data received:', res.data);
 
         if (res.data && res.data.id) {
           setAdmin(res.data);
-          console.log('✅ Admin dashboard loaded');
+          console.log('✅ [DASHBOARD] Admin dashboard loaded successfully');
         } else {
-          console.error('❌ Admin data format unexpected:', res.data);
+          console.error('❌ [DASHBOARD] Admin data format unexpected:', res.data);
           setAdmin(null);
-          // Redirect to login if no valid admin data
           window.location.href = '/admin-login';
         }
       } catch (err) {
-        console.error('❌ Failed to fetch admin profile');
+        console.error('❌ [DASHBOARD] Failed to fetch admin profile');
         console.error('   Status:', err.response?.status);
         console.error('   Data:', err.response?.data);
         console.error('   Message:', err.message);
-        // Clear tokens on auth failure
-        jwtService.clearTokens();
+        // Clear token on auth failure
+        jwtService.clearToken();
         // Wait for animation to complete before redirecting
         await minLoadingTime;
         window.location.href = '/admin-login';

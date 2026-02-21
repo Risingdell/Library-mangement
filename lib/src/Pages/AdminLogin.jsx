@@ -25,23 +25,31 @@ const AdminLogin = () => {
 
       console.log('🔐 Login Response:', res.data);
 
-      // Extract token and refreshToken from new response format
+      // Extract token from response
       if (res.data.success && res.data.data?.token) {
-        const { token, refreshToken } = res.data.data;
+        const { token } = res.data.data;
 
-        console.log('✅ Token received:', token?.substring(0, 50) + '...');
-        console.log('✅ Refresh token received:', refreshToken?.substring(0, 50) + '...');
+        console.log('📨 [LOGIN] Token received from backend');
+        console.log('📨 [LOGIN] Token preview:', token?.substring(0, 50) + '...');
 
-        // Store tokens in localStorage
-        jwtService.setTokens(token, refreshToken);
+        // Store token in localStorage using jwtService
+        const saved = jwtService.setToken(token);
 
-        console.log('✅ Tokens stored in localStorage');
-        console.log('✅ Token exists:', jwtService.isAuthenticated());
+        if (saved) {
+          console.log('✅ [LOGIN] Token saved successfully');
+          console.log('✅ [LOGIN] Authenticated status:', jwtService.isAuthenticated());
 
-        // Navigate to dashboard
-        navigate('/admin-dashboard');
+          // Small delay to ensure token is saved before navigation
+          setTimeout(() => {
+            console.log('📊 [LOGIN] Navigating to admin dashboard...');
+            navigate('/admin-dashboard');
+          }, 500);
+        } else {
+          console.error('❌ [LOGIN] Failed to save token');
+          setError('Failed to save authentication token');
+        }
       } else {
-        console.error('❌ Unexpected response format:', res.data);
+        console.error('❌ [LOGIN] Unexpected response format:', res.data);
         setError('Unexpected response format from server');
       }
     } catch (err) {
