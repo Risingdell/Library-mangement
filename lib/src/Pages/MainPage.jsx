@@ -20,6 +20,7 @@ const MainPage = () => {
   const [historyBooks, setHistoryBooks] = useState([]);
   const [sellingBooks, setSellingBooks] = useState([]);
   const [requestedBooks, setRequestedBooks] = useState([]);
+  const [branchRequests, setBranchRequests] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -71,6 +72,11 @@ const MainPage = () => {
       axios.get(url, { withCredentials: true })
         .then(res => setHistoryBooks(res.data))
         .catch(err => console.error('Failed to fetch history', err));
+    } else if (activeTab === 'branch-requests') {
+      const url = API_URL + '/api/branch-books/my-requests';
+      axios.get(url, { withCredentials: true })
+        .then(res => setBranchRequests(res.data))
+        .catch(err => console.error('Failed to fetch branch requests', err));
     }
   }, [activeTab]);
 
@@ -896,6 +902,45 @@ const MainPage = () => {
             )}
           </div>
         );
+
+      case 'branch-requests':
+        return (
+          <div className="branch-requests-section">
+            <h2 className="section-title">📚 My Library Book Requests</h2>
+            {branchRequests.length === 0 ? (
+              <div className="empty-state">
+                <p>You haven't requested any library books yet</p>
+              </div>
+            ) : (
+              <div className="books-grid">
+                {branchRequests.map((item) => (
+                  <div key={item.id} className="book-card">
+                    <div className="book-info">
+                      <h3 className="book-title">{item.title}</h3>
+                      <p className="book-author">by {item.author}</p>
+                      <div className="book-details">
+                        <span className="book-acc">Acc. No: {item.acc_no}</span>
+                      </div>
+                      <div className="request-info">
+                        <p>Requested: {new Date(item.requested_at).toLocaleDateString()}</p>
+                        <p className={'status-badge ' + item.status}>
+                          {item.status === 'pending' && '⏳ Pending Admin Approval'}
+                          {item.status === 'approved' && '✅ Approved - Awaiting Handover'}
+                          {item.status === 'rejected' && '❌ Rejected'}
+                          {item.status === 'completed' && '📦 Completed'}
+                        </p>
+                        {item.status === 'rejected' && item.rejection_reason && (
+                          <p className="rejection-reason">Reason: {item.rejection_reason}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
       default:
         return null;
     }
@@ -988,6 +1033,18 @@ const MainPage = () => {
               <img src="/clarity--history-line.svg" alt="History" style={{ width: '20px', height: '20px' }} />
             </span>
             <span className="nav-text">History</span>
+          </button>
+          <button
+            className={'nav-item ' + (activeTab === 'branch-requests' ? 'active' : '')}
+            onClick={() => handleTabChange('branch-requests')}
+          >
+            <span className="nav-icon">📚</span>
+            <span className="nav-text">
+              Library Requests
+              {branchRequests.length > 0 && (
+                <span className="badge">{branchRequests.length}</span>
+              )}
+            </span>
           </button>
           <button
             className={'nav-item ' + (activeTab === 'sell' ? 'active' : '')}
