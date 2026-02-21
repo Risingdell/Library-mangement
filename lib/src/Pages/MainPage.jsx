@@ -580,6 +580,35 @@ const MainPage = () => {
             )}
           </div>
         );
+      case 'branch-requests':
+        return (
+          <div className="branch-requests-section">
+            <h2 className="section-title">Library Requests</h2>
+            {branchRequests.length === 0 ? (
+              <div className="empty-state"><p>You haven't requested any library books yet</p></div>
+            ) : (
+              <div className="books-grid">
+                {branchRequests.map((book, idx) => (
+                  <div key={idx} className="book-card">
+                    <div className="book-info">
+                      <h3 className="book-title">{book.title}</h3>
+                      <p className="book-author">by {book.author}</p>
+                      <div className="book-details">
+                        <span className="book-acc">Acc. No: {book.acc_no}</span>
+                        <span className={'status-badge status-' + (book.status || 'pending')}>
+                          Status: {book.status || 'pending'}
+                        </span>
+                      </div>
+                      {book.requested_at && (
+                        <p className="book-date">Requested: {new Date(book.requested_at).toLocaleDateString()}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
       case 'sell':
         return (
           <div className="sell-section">
@@ -1002,6 +1031,18 @@ const MainPage = () => {
             <span className="nav-text">History</span>
           </button>
           <button
+            className={'nav-item ' + (activeTab === 'branch-requests' ? 'active' : '')}
+            onClick={() => handleTabChange('branch-requests')}
+          >
+            <span className="nav-icon">📚</span>
+            <span className="nav-text">
+              Library Requests
+              {branchRequests.length > 0 && (
+                <span className="badge">{branchRequests.length}</span>
+              )}
+            </span>
+          </button>
+          <button
             className={'nav-item ' + (activeTab === 'sell' ? 'active' : '')}
             onClick={() => handleTabChange('sell')}
           >
@@ -1064,6 +1105,7 @@ const MainPage = () => {
             {activeTab === 'books' && 'Available Books'}
             {activeTab === 'borrowed' && 'My Books'}
             {activeTab === 'history' && 'History'}
+            {activeTab === 'branch-requests' && 'Library Requests'}
             {activeTab === 'sell' && 'Sell Book'}
             {activeTab === 'view-sell' && 'Marketplace'}
             {activeTab === 'requested-sell' && 'Requested Books'}
