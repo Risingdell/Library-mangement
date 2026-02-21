@@ -71,6 +71,11 @@ const MainPage = () => {
       axios.get(url, { withCredentials: true })
         .then(res => setHistoryBooks(res.data))
         .catch(err => console.error('Failed to fetch history', err));
+    } else if (activeTab === 'branch-requests') {
+      const url = API_URL + '/api/branch-books/my-requests';
+      axios.get(url, { withCredentials: true })
+        .then(res => setBranchRequests(res.data))
+        .catch(err => console.error('Failed to fetch branch requests', err));
     }
   }, [activeTab]);
 
@@ -100,12 +105,18 @@ const MainPage = () => {
     }
   }, [activeTab]);
 
-  // Load requested books count for sidebar badge
+  // Load requested books count for sidebar badges
   useEffect(() => {
-    const url = API_URL + '/sell-books/my-requests';
-    axios.get(url, { withCredentials: true })
+    const marketplaceUrl = API_URL + '/sell-books/my-requests';
+    const branchUrl = API_URL + '/api/branch-books/my-requests';
+
+    axios.get(marketplaceUrl, { withCredentials: true })
       .then(res => setRequestedBooks(res.data))
-      .catch(err => console.error('Failed to fetch requested books', err));
+      .catch(err => console.error('Failed to fetch marketplace requested books', err));
+
+    axios.get(branchUrl, { withCredentials: true })
+      .then(res => setBranchRequests(res.data))
+      .catch(err => console.error('Failed to fetch branch book requests', err));
   }, []);
 
   const handleBorrow = (bookId) => {
@@ -990,18 +1001,6 @@ const MainPage = () => {
             <span className="nav-text">History</span>
           </button>
           <button
-            className={'nav-item ' + (activeTab === 'branch-requests' ? 'active' : '')}
-            onClick={() => handleTabChange('branch-requests')}
-          >
-            <span className="nav-icon">📚</span>
-            <span className="nav-text">
-              Library Requests
-              {branchRequests.length > 0 && (
-                <span className="badge">{branchRequests.length}</span>
-              )}
-            </span>
-          </button>
-          <button
             className={'nav-item ' + (activeTab === 'sell' ? 'active' : '')}
             onClick={() => handleTabChange('sell')}
           >
@@ -1064,7 +1063,6 @@ const MainPage = () => {
             {activeTab === 'books' && 'Available Books'}
             {activeTab === 'borrowed' && 'My Books'}
             {activeTab === 'history' && 'History'}
-            {activeTab === 'branch-requests' && 'Library Requests'}
             {activeTab === 'sell' && 'Sell Book'}
             {activeTab === 'view-sell' && 'Marketplace'}
             {activeTab === 'requested-sell' && 'Requested Books'}
