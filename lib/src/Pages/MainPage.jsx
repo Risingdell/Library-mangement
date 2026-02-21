@@ -990,6 +990,18 @@ const MainPage = () => {
             <span className="nav-text">History</span>
           </button>
           <button
+            className={'nav-item ' + (activeTab === 'branch-requests' ? 'active' : '')}
+            onClick={() => handleTabChange('branch-requests')}
+          >
+            <span className="nav-icon">📚</span>
+            <span className="nav-text">
+              Library Requests
+              {branchRequests.length > 0 && (
+                <span className="badge">{branchRequests.length}</span>
+              )}
+            </span>
+          </button>
+          <button
             className={'nav-item ' + (activeTab === 'sell' ? 'active' : '')}
             onClick={() => handleTabChange('sell')}
           >
@@ -1052,6 +1064,7 @@ const MainPage = () => {
             {activeTab === 'books' && 'Available Books'}
             {activeTab === 'borrowed' && 'My Books'}
             {activeTab === 'history' && 'History'}
+            {activeTab === 'branch-requests' && 'Library Requests'}
             {activeTab === 'sell' && 'Sell Book'}
             {activeTab === 'view-sell' && 'Marketplace'}
             {activeTab === 'requested-sell' && 'Requested Books'}
