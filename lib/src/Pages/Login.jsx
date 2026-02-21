@@ -23,34 +23,50 @@ function Login() {
   const login = async () => {
     setLoading(true);
     try {
+      console.log('🔐 [USER LOGIN] Sending login request...');
       const response = await axios.post(`${API_URL}/login`, {
         username,
         password
       });
 
-      // Extract token and refreshToken from new response format
+      console.log('📨 [USER LOGIN] Login response:', response.data);
+
+      // Extract token from new response format
       if (response.data.success && response.data.data?.token) {
-        const { token, refreshToken, user } = response.data.data;
+        const { token, user } = response.data.data;
 
-        // Store tokens in localStorage
-        jwtService.setTokens(token, refreshToken);
+        console.log('✅ [USER LOGIN] Token received from backend');
+        console.log('✅ [USER LOGIN] User:', user.username);
 
-        // Update user context
-        setUser({ username: user.username, id: user.id, email: user.email });
-        setLoginStatus(`Welcome, ${user.username}!`);
+        // Store token in localStorage using jwtService
+        const saved = jwtService.setToken(token);
 
-        // Clear form
-        setUsername('');
-        setPassword('');
+        if (saved) {
+          console.log('✅ [USER LOGIN] Token saved successfully');
 
-        // Navigate to main page
-        navigate('/main');
+          // Update user context
+          setUser({ username: user.username, id: user.id, email: user.email });
+          setLoginStatus(`Welcome, ${user.username}!`);
+
+          // Clear form
+          setUsername('');
+          setPassword('');
+
+          console.log('📊 [USER LOGIN] Navigating to main page...');
+          // Navigate to main page
+          navigate('/main');
+        } else {
+          console.error('❌ [USER LOGIN] Failed to save token');
+          setLoginStatus('Failed to save authentication token');
+          showSnackbar('error', 'Failed to save authentication token');
+        }
       } else {
+        console.error('❌ [USER LOGIN] Unexpected response format:', response.data);
         setLoginStatus('Unexpected response format from server');
         showSnackbar('error', 'Login failed. Please try again.');
       }
     } catch (error) {
-      console.error("Error logging in:", error);
+      console.error('❌ [USER LOGIN] Login error:', error);
       const errorMessage = error.response?.data?.message || 'Login failed. Please check your credentials.';
       setLoginStatus(errorMessage);
       showSnackbar('error', errorMessage);
