@@ -317,7 +317,7 @@ const AdminDashboard = () => {
         try {
           const res = await axios.post(
             `${API_URL}/api/admin/branch-books/approve`,
-            { requestId },
+            { request_id: requestId },
                       );
           showSnackbar('success', res.data.message || 'Request approved successfully');
           // Refresh purchase requests list (since it now shows library requests)
@@ -345,7 +345,7 @@ const AdminDashboard = () => {
     try {
       const res = await axios.post(
         `${API_URL}/api/admin/branch-books/reject`,
-        { requestId, rejectionReason: reason },
+        { request_id: requestId, rejection_reason: reason },
               );
       showSnackbar('success', res.data.message || 'Request rejected successfully');
       // Refresh purchase requests list (since it now shows library requests)
@@ -367,7 +367,7 @@ const AdminDashboard = () => {
         try {
           const res = await axios.post(
             `${API_URL}/api/admin/branch-books/confirm-handover`,
-            { requestId },
+            { request_id: requestId },
                       );
           showSnackbar('success', res.data.message || 'Handover confirmed! Book assigned to student.');
           // Refresh purchase requests list
