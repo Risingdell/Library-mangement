@@ -235,7 +235,7 @@ export default HomePage;
 // import ThreeBackground from '../Components/ThreeBackground';
 // import sitLogo from '../assets/sit2.jpg';
 // import deepRightImg from '../assets/branch.png';
-//git work
+//git work test
 // const HomePage = () => {
 //   const navigate = useNavigate();
 //   const [typedText, setTypedText] = useState('');
