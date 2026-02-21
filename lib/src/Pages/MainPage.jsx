@@ -20,6 +20,7 @@ const MainPage = () => {
   const [historyBooks, setHistoryBooks] = useState([]);
   const [sellingBooks, setSellingBooks] = useState([]);
   const [requestedBooks, setRequestedBooks] = useState([]);
+  const [branchRequests, setBranchRequests] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
