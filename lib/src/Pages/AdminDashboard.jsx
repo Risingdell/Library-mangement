@@ -320,9 +320,12 @@ const AdminDashboard = () => {
             { requestId },
                       );
           showSnackbar('success', res.data.message || 'Request approved successfully');
-          // Refresh requests list
-          const updatedRes = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`);
-          setBranchBookRequests(updatedRes.data);
+          // Refresh purchase requests list (since it now shows library requests)
+          const updatedRes = await axios.get(`${API_URL}/api/admin/purchase-requests`);
+          setPurchaseRequests(updatedRes.data);
+          // Also refresh branch book requests for other tabs
+          const branchRes = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`);
+          setBranchBookRequests(branchRes.data);
         } catch (err) {
           console.error('Approve failed:', err);
           showSnackbar('error', err.response?.data?.message || 'Failed to approve request');
@@ -345,9 +348,12 @@ const AdminDashboard = () => {
         { requestId, rejectionReason: reason },
               );
       showSnackbar('success', res.data.message || 'Request rejected successfully');
-      // Refresh requests list
-      const updatedRes = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`);
-      setBranchBookRequests(updatedRes.data);
+      // Refresh purchase requests list (since it now shows library requests)
+      const updatedRes = await axios.get(`${API_URL}/api/admin/purchase-requests`);
+      setPurchaseRequests(updatedRes.data);
+      // Also refresh branch book requests for other tabs
+      const branchRes = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`);
+      setBranchBookRequests(branchRes.data);
     } catch (err) {
       console.error('Reject failed:', err);
       showSnackbar('error', err.response?.data?.message || 'Failed to reject request');
@@ -364,7 +370,10 @@ const AdminDashboard = () => {
             { requestId },
                       );
           showSnackbar('success', res.data.message || 'Handover confirmed! Book assigned to student.');
-          // Refresh approved requests list
+          // Refresh purchase requests list
+          const purchaseRes = await axios.get(`${API_URL}/api/admin/purchase-requests`);
+          setPurchaseRequests(purchaseRes.data);
+          // Also refresh approved requests list
           const updatedRes = await axios.get(`${API_URL}/api/admin/branch-books/approved-requests`);
           setApprovedBranchRequests(updatedRes.data);
         } catch (err) {
@@ -978,25 +987,25 @@ const AdminDashboard = () => {
 
           {activeTab === 'purchase-requests' && (
             <div className="dashboard-content">
-              <h2 className="section-title">Book Purchase Requests</h2>
+              <h2 className="section-title">Library Book Requests</h2>
               <p style={{ marginBottom: '20px', color: '#666' }}>
-                Confirm when students physically receive their purchased books. Once confirmed, the book is permanently assigned to the student.
+                Approve or reject student requests for library books. Once approved, confirm when the book is handed over to the student.
               </p>
 
               {purchaseRequests.length === 0 ? (
                 <div className="empty-state">
-                  <p>✅ No pending purchase requests</p>
+                  <p>✅ No pending library book requests</p>
                 </div>
               ) : (
                 <table className="data-table">
                   <thead>
                     <tr>
                       <th>Book Title</th>
+                      <th>Accession No.</th>
                       <th>Student</th>
                       <th>USN</th>
-                      <th>Seller</th>
                       <th>Requested Date</th>
-                      <th>Priority</th>
+                      <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -1011,9 +1020,10 @@ const AdminDashboard = () => {
                             </div>
                           )}
                           <div style={{ fontSize: '0.85em', color: '#888' }}>
-                            Type: {request.type} | Format: {request.book_format}
+                            Format: {request.book_format}
                           </div>
                         </td>
+                        <td>{request.acc_no}</td>
                         <td>
                           {request.student_first_name} {request.student_last_name}
                           <div style={{ fontSize: '0.9em', color: '#666' }}>
@@ -1022,77 +1032,96 @@ const AdminDashboard = () => {
                         </td>
                         <td>{request.student_usn}</td>
                         <td>
-                          {request.seller_first_name} {request.seller_last_name}
-                          <div style={{ fontSize: '0.9em', color: '#666' }}>
-                            📞 {request.seller_contact}
-                          </div>
-                        </td>
-                        <td>
                           {new Date(request.requested_at).toLocaleDateString()}
                           <div style={{ fontSize: '0.85em', color: '#888' }}>
                             {new Date(request.requested_at).toLocaleTimeString()}
                           </div>
                         </td>
                         <td>
-                          {request.is_priority_buyer ? (
-                            <span style={{
-                              color: '#10b981',
-                              fontWeight: 'bold',
-                              padding: '4px 8px',
-                              background: '#d1fae5',
-                              borderRadius: '4px',
-                              fontSize: '0.9em'
-                            }}>
-                              🎯 First in Queue
-                            </span>
-                          ) : (
-                            <span style={{
-                              color: '#f59e0b',
-                              padding: '4px 8px',
-                              background: '#fef3c7',
-                              borderRadius: '4px',
-                              fontSize: '0.9em'
-                            }}>
-                              ⏳ In Queue
-                            </span>
-                          )}
+                          <span style={{
+                            color: request.status === 'approved' ? '#10b981' : '#f59e0b',
+                            fontWeight: 'bold',
+                            padding: '4px 8px',
+                            background: request.status === 'approved' ? '#d1fae5' : '#fef3c7',
+                            borderRadius: '4px',
+                            fontSize: '0.9em',
+                            textTransform: 'capitalize'
+                          }}>
+                            {request.status === 'approved' ? '✅ Approved' : '⏳ Pending'}
+                          </span>
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
-                            <button
-                              style={{
-                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                color: 'white',
+                            {request.status === 'pending' && (
+                              <>
+                                <button
+                                  style={{
+                                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                    color: 'white',
+                                    padding: '8px 16px',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600',
+                                    fontSize: '0.9em',
+                                    transition: 'all 0.3s'
+                                  }}
+                                  onClick={() => handleApproveBranchRequest(request.request_id)}
+                                  title="Approve this request"
+                                >
+                                  ✅ Approve
+                                </button>
+                                <button
+                                  style={{
+                                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                    color: 'white',
+                                    padding: '8px 16px',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600',
+                                    fontSize: '0.9em',
+                                    transition: 'all 0.3s'
+                                  }}
+                                  onClick={() => handleRejectBranchRequest(request.request_id)}
+                                  title="Reject this request"
+                                >
+                                  ❌ Reject
+                                </button>
+                              </>
+                            )}
+                            {request.status === 'approved' && !request.confirmed_handed_over && (
+                              <button
+                                style={{
+                                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                                  color: 'white',
+                                  padding: '8px 16px',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontWeight: '600',
+                                  fontSize: '0.9em',
+                                  transition: 'all 0.3s'
+                                }}
+                                onClick={() => handleConfirmBranchHandover(request.request_id)}
+                                title="Confirm book handed over to student"
+                              >
+                                📦 Confirm Handover
+                              </button>
+                            )}
+                            {request.confirmed_handed_over && (
+                              <span style={{
+                                color: '#10b981',
+                                fontWeight: 'bold',
                                 padding: '8px 16px',
-                                border: 'none',
+                                background: '#d1fae5',
                                 borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontWeight: '600',
                                 fontSize: '0.9em',
-                                transition: 'all 0.3s'
-                              }}
-                              onClick={() => handleConfirmBookReceived(request.request_id)}
-                              title="Confirm student received the book"
-                            >
-                              ✅ Confirm Handover
-                            </button>
-                            <button
-                              style={{
-                                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                                color: 'white',
-                                padding: '8px 16px',
-                                border: 'none',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontWeight: '600',
-                                fontSize: '0.9em',
-                                transition: 'all 0.3s'
-                              }}
-                              onClick={() => handleRejectPurchaseRequest(request.request_id)}
-                              title="Reject this request"
-                            >
-                              ❌ Reject
-                            </button>
+                                textAlign: 'center'
+                              }}>
+                                ✅ Handed Over
+                              </span>
+                            )}
                           </div>
                         </td>
                       </tr>
