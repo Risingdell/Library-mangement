@@ -225,6 +225,27 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleMarkReturned = async (borrowId) => {
+    showConfirmSnackbar(
+      'Confirm that you have physically received this book from the student?',
+      async () => {
+        try {
+          const res = await axios.post(
+            `${API_URL}/api/admin/mark-returned`,
+            { borrow_id: borrowId }
+          );
+          showSnackbar('success', res.data.message);
+          const updatedRes = await axios.get(`${API_URL}/api/admin/pending-returns`);
+          setPendingReturns(updatedRes.data);
+        } catch (err) {
+          console.error('Mark returned failed:', err);
+          showSnackbar('error', err.response?.data?.message || 'Failed to mark book as returned');
+        }
+      },
+      'success'
+    );
+  };
+
   const handleApproveUser = async (userId) => {
     showConfirmSnackbar(
       'Are you sure you want to approve this user registration?',
@@ -894,7 +915,12 @@ const AdminDashboard = () => {
                             </>
                           )}
                           {item.return_status === 'active' && (
-                            <span style={{ color: '#94a3b8', fontSize: '13px' }}>Awaiting return</span>
+                            <button
+                              className="approve-btn"
+                              onClick={() => handleMarkReturned(item.borrow_id)}
+                            >
+                              📥 Mark as Received
+                            </button>
                           )}
                         </td>
                       </tr>
