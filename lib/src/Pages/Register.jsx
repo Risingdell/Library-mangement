@@ -17,6 +17,17 @@ function Register() {
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [usnError, setUsnError] = useState('');
+  const [showPasswordHints, setShowPasswordHints] = useState(false);
+
+  const passwordChecks = (pwd) => ({
+    length:    pwd.length >= 8,
+    lowercase: /[a-z]/.test(pwd),
+    uppercase: /[A-Z]/.test(pwd),
+    number:    /\d/.test(pwd),
+    special:   /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd),
+  });
+
+  const checks = passwordChecks(formData.password);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -56,6 +67,13 @@ function Register() {
 
     if (!formData.usn.includes('AD')) {
       showSnackbar('warning', "Invalid USN. Only students with 'AD' department code can register.");
+      return;
+    }
+
+    const c = passwordChecks(formData.password);
+    if (!c.length || !c.lowercase || !c.uppercase || !c.number || !c.special) {
+      showSnackbar('warning', 'Password does not meet the requirements. Please check the checklist below the password field.');
+      setShowPasswordHints(true);
       return;
     }
 
@@ -180,10 +198,44 @@ function Register() {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
+                onFocus={() => setShowPasswordHints(true)}
                 placeholder="Password"
                 required
                 autoComplete="new-password"
+                style={{
+                  borderColor: formData.password
+                    ? (Object.values(checks).every(Boolean) ? '#16a34a' : '#ef4444')
+                    : ''
+                }}
               />
+              {(showPasswordHints || formData.password) && (
+                <div style={{
+                  marginTop: '8px',
+                  padding: '10px 14px',
+                  background: '#f8fafc',
+                  borderRadius: '6px',
+                  border: '1px solid #e2e8f0',
+                  fontSize: '13px'
+                }}>
+                  <p style={{ margin: '0 0 6px', fontWeight: '600', color: '#475569', fontSize: '12px' }}>
+                    Password requirements:
+                  </p>
+                  {[
+                    { key: 'length',    label: 'At least 8 characters' },
+                    { key: 'uppercase', label: 'One uppercase letter (A–Z)' },
+                    { key: 'lowercase', label: 'One lowercase letter (a–z)' },
+                    { key: 'number',    label: 'One number (0–9)' },
+                    { key: 'special',   label: 'One special character (!@#$%^&*...)' },
+                  ].map(({ key, label }) => (
+                    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                      <span style={{ color: checks[key] ? '#16a34a' : '#94a3b8', fontSize: '14px', lineHeight: 1 }}>
+                        {checks[key] ? '✓' : '○'}
+                      </span>
+                      <span style={{ color: checks[key] ? '#16a34a' : '#64748b' }}>{label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button type="submit" className="register-button">
