@@ -990,25 +990,24 @@ const AdminDashboard = () => {
 
           {activeTab === 'purchase-requests' && (
             <div className="dashboard-content">
-              <h2 className="section-title">Library Book Requests</h2>
+              <h2 className="section-title">Book Requests ({purchaseRequests.length})</h2>
               <p style={{ marginBottom: '20px', color: '#666' }}>
-                Approve or reject student requests for library books. Once approved, confirm when the book is handed over to the student.
+                Approve or reject student requests for library books. Approved requests move to <strong>Confirm Handover</strong>.
               </p>
 
               {purchaseRequests.length === 0 ? (
                 <div className="empty-state">
-                  <p>✅ No pending library book requests</p>
+                  <p>✅ No pending book requests</p>
                 </div>
               ) : (
                 <table className="data-table">
                   <thead>
                     <tr>
                       <th>Book Title</th>
-                      <th>Accession No.</th>
+                      <th>Acc No.</th>
                       <th>Student</th>
                       <th>USN</th>
-                      <th>Requested Date</th>
-                      <th>Status</th>
+                      <th>Requested On</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -1018,20 +1017,13 @@ const AdminDashboard = () => {
                         <td>
                           <strong>{request.title}</strong>
                           {request.author && (
-                            <div style={{ fontSize: '0.9em', color: '#666' }}>
-                              by {request.author}
-                            </div>
+                            <div style={{ fontSize: '0.9em', color: '#666' }}>by {request.author}</div>
                           )}
-                          <div style={{ fontSize: '0.85em', color: '#888' }}>
-                            Format: {request.book_format}
-                          </div>
                         </td>
                         <td>{request.acc_no}</td>
                         <td>
                           {request.student_first_name} {request.student_last_name}
-                          <div style={{ fontSize: '0.9em', color: '#666' }}>
-                            @{request.student_username}
-                          </div>
+                          <div style={{ fontSize: '0.9em', color: '#666' }}>@{request.student_username}</div>
                         </td>
                         <td>{request.student_usn}</td>
                         <td>
@@ -1041,139 +1033,43 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                         <td>
-                          <span style={{
-                            color: request.status === 'approved' ? '#10b981' : '#f59e0b',
-                            fontWeight: 'bold',
-                            padding: '4px 8px',
-                            background: request.status === 'approved' ? '#d1fae5' : '#fef3c7',
-                            borderRadius: '4px',
-                            fontSize: '0.9em',
-                            textTransform: 'capitalize'
-                          }}>
-                            {request.status === 'approved' ? '✅ Approved' : '⏳ Pending'}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
-                            {request.status === 'pending' && (
-                              <>
-                                <button
-                                  style={{
-                                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                    color: 'white',
-                                    padding: '8px 16px',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: '600',
-                                    fontSize: '0.9em',
-                                    transition: 'all 0.3s'
-                                  }}
-                                  onClick={() => handleApproveBranchRequest(request.request_id)}
-                                  title="Approve this request"
-                                >
-                                  ✅ Approve
-                                </button>
-                                <button
-                                  style={{
-                                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                                    color: 'white',
-                                    padding: '8px 16px',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: '600',
-                                    fontSize: '0.9em',
-                                    transition: 'all 0.3s'
-                                  }}
-                                  onClick={() => handleRejectBranchRequest(request.request_id)}
-                                  title="Reject this request"
-                                >
-                                  ❌ Reject
-                                </button>
-                              </>
-                            )}
-                            {request.status === 'approved' && !request.confirmed_handed_over && (
-                              <button
-                                style={{
-                                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                                  color: 'white',
-                                  padding: '8px 16px',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  cursor: 'pointer',
-                                  fontWeight: '600',
-                                  fontSize: '0.9em',
-                                  transition: 'all 0.3s'
-                                }}
-                                onClick={() => handleConfirmBranchHandover(request.request_id)}
-                                title="Confirm book handed over to student"
-                              >
-                                📦 Confirm Handover
-                              </button>
-                            )}
-                            {request.confirmed_handed_over && (
-                              <span style={{
-                                color: '#10b981',
-                                fontWeight: 'bold',
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              style={{
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: 'white',
                                 padding: '8px 16px',
-                                background: '#d1fae5',
+                                border: 'none',
                                 borderRadius: '6px',
-                                fontSize: '0.9em',
-                                textAlign: 'center'
-                              }}>
-                                ✅ Handed Over
-                              </span>
-                            )}
+                                cursor: 'pointer',
+                                fontWeight: '600',
+                                fontSize: '0.9em'
+                              }}
+                              onClick={() => handleApproveBranchRequest(request.request_id)}
+                            >
+                              ✅ Approve
+                            </button>
+                            <button
+                              style={{
+                                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                color: 'white',
+                                padding: '8px 16px',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: '600',
+                                fontSize: '0.9em'
+                              }}
+                              onClick={() => handleRejectBranchRequest(request.request_id)}
+                            >
+                              ❌ Reject
+                            </button>
                           </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              )}
-
-              <div style={{
-                marginTop: '30px',
-                padding: '20px',
-                background: '#f0f9ff',
-                borderRadius: '8px',
-                border: '1px solid #bfdbfe'
-              }}>
-                <h3 style={{ margin: '0 0 15px 0', color: '#1e40af' }}>
-                  📌 Admin Verification Workflow:
-                </h3>
-                <ol style={{ margin: 0, paddingLeft: '20px', color: '#1e3a8a', lineHeight: '1.8' }}>
-                  <li><strong>Student Requests Book:</strong> Student clicks "Request to Buy" on marketplace</li>
-                  <li><strong>Request Appears Here:</strong> Shows in this table with student & book details</li>
-                  <li><strong>Physical Handover:</strong> Student collects book from library/seller</li>
-                  <li><strong>Admin Confirms:</strong> Click "✅ Confirm Handover" button after verification</li>
-                  <li><strong>Automatic Assignment:</strong>
-                    <ul style={{ marginTop: '5px' }}>
-                      <li>Book permanently assigned to student</li>
-                      <li>Entry created in purchased_books table</li>
-                      <li>Book removed from marketplace</li>
-                      <li>Other pending requests cancelled</li>
-                      <li>Student can view in "My Purchased Books"</li>
-                    </ul>
-                  </li>
-                </ol>
-              </div>
-
-              {purchaseRequests.length > 0 && (
-                <div style={{
-                  marginTop: '20px',
-                  padding: '15px',
-                  background: '#fffbeb',
-                  borderRadius: '8px',
-                  border: '1px solid #fbbf24'
-                }}>
-                  <strong style={{ color: '#92400e' }}>⚠️ Important:</strong>
-                  <p style={{ margin: '5px 0 0 0', color: '#78350f' }}>
-                    Only click "Confirm Handover" after you have personally verified that the student has received the physical book.
-                    This action is irreversible and will permanently assign the book to the student.
-                  </p>
-                </div>
               )}
             </div>
           )}
