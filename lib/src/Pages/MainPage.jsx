@@ -588,23 +588,49 @@ const MainPage = () => {
               <div className="empty-state"><p>You haven't requested any library books yet</p></div>
             ) : (
               <div className="books-grid">
-                {branchRequests.map((book, idx) => (
-                  <div key={idx} className="book-card">
-                    <div className="book-info">
-                      <h3 className="book-title">{book.title}</h3>
-                      <p className="book-author">by {book.author}</p>
-                      <div className="book-details">
-                        <span className="book-acc">Acc. No: {book.acc_no}</span>
-                        <span className={'status-badge status-' + (book.status || 'pending')}>
-                          Status: {book.status || 'pending'}
-                        </span>
+                {branchRequests.map((book, idx) => {
+                  const isHandedOver = book.confirmed_handed_over === 1 || book.confirmed_handed_over === true;
+                  const displayStatus = isHandedOver ? 'handed_over' : (book.status || 'pending');
+                  const statusLabel = {
+                    pending: '⏳ Pending',
+                    approved: '✅ Approved',
+                    rejected: '❌ Rejected',
+                    handed_over: '📦 Handed Over',
+                  }[displayStatus] || displayStatus;
+
+                  return (
+                    <div key={idx} className="book-card">
+                      <div className="book-info">
+                        <h3 className="book-title">{book.title}</h3>
+                        <p className="book-author">by {book.author}</p>
+                        <div className="book-details">
+                          <span className="book-acc">Acc. No: {book.acc_no}</span>
+                          <span className={'status-badge status-' + displayStatus}>
+                            {statusLabel}
+                          </span>
+                        </div>
+                        {book.requested_at && (
+                          <p className="book-date">Requested: {new Date(book.requested_at).toLocaleDateString()}</p>
+                        )}
+                        {book.status === 'approved' && book.approved_at && !isHandedOver && (
+                          <p className="book-date" style={{ color: '#16a34a' }}>
+                            Approved on: {new Date(book.approved_at).toLocaleDateString()}
+                          </p>
+                        )}
+                        {isHandedOver && book.confirmed_at && (
+                          <p className="book-date" style={{ color: '#16a34a' }}>
+                            Handed over on: {new Date(book.confirmed_at).toLocaleDateString()}
+                          </p>
+                        )}
+                        {book.status === 'rejected' && book.rejection_reason && (
+                          <p className="book-date" style={{ color: '#dc2626' }}>
+                            Reason: {book.rejection_reason}
+                          </p>
+                        )}
                       </div>
-                      {book.requested_at && (
-                        <p className="book-date">Requested: {new Date(book.requested_at).toLocaleDateString()}</p>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1037,8 +1063,8 @@ const MainPage = () => {
             <span className="nav-icon">📚</span>
             <span className="nav-text">
               Library Requests
-              {branchRequests.length > 0 && (
-                <span className="badge">{branchRequests.length}</span>
+              {branchRequests.filter(r => r.status === 'pending' || (r.status === 'approved' && !r.confirmed_handed_over)).length > 0 && (
+                <span className="badge">{branchRequests.filter(r => r.status === 'pending' || (r.status === 'approved' && !r.confirmed_handed_over)).length}</span>
               )}
             </span>
           </button>
