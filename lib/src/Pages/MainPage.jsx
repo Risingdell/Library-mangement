@@ -425,23 +425,23 @@ const MainPage = () => {
 
             {currentlyBorrowed > 0 && (
               <div style={{
-                background: currentlyBorrowed >= 2 ? '#fee2e2' : '#fffbeb',
-                border: `1px solid ${currentlyBorrowed >= 2 ? '#fca5a5' : '#fde68a'}`,
-                color: currentlyBorrowed >= 2 ? '#991b1b' : '#92400e',
+                background: currentlyBorrowed >= 3 ? '#fee2e2' : '#fffbeb',
+                border: `1px solid ${currentlyBorrowed >= 3 ? '#fca5a5' : '#fde68a'}`,
+                color: currentlyBorrowed >= 3 ? '#991b1b' : '#92400e',
                 padding: '12px 16px',
                 borderRadius: '8px',
                 marginBottom: '20px',
                 fontSize: '14px'
               }}>
-                {currentlyBorrowed >= 2 ? (
+                {currentlyBorrowed >= 3 ? (
                   <>
-                    ⚠️ <strong>Borrowing Limit Reached:</strong> You have borrowed {currentlyBorrowed}/2 books.
+                    ⚠️ <strong>Borrowing Limit Reached:</strong> You have borrowed {currentlyBorrowed}/3 books.
                     Please return a book before borrowing another one.
                   </>
                 ) : (
                   <>
-                    ℹ️ You have borrowed {currentlyBorrowed}/2 books.
-                    You can borrow {2 - currentlyBorrowed} more {2 - currentlyBorrowed === 1 ? 'book' : 'books'}.
+                    ℹ️ You have borrowed {currentlyBorrowed}/3 books.
+                    You can borrow {3 - currentlyBorrowed} more {3 - currentlyBorrowed === 1 ? 'book' : 'books'}.
                   </>
                 )}
               </div>
@@ -466,14 +466,14 @@ const MainPage = () => {
                   <button
                     className="borrow-btn"
                     onClick={() => handleBorrow(book.id)}
-                    disabled={borrowingBookId === book.id || currentlyBorrowed >= 2}
+                    disabled={borrowingBookId === book.id || currentlyBorrowed >= 3}
                     style={{
-                      opacity: currentlyBorrowed >= 2 ? 0.5 : 1,
-                      cursor: currentlyBorrowed >= 2 ? 'not-allowed' : 'pointer'
+                      opacity: currentlyBorrowed >= 3 ? 0.5 : 1,
+                      cursor: currentlyBorrowed >= 3 ? 'not-allowed' : 'pointer'
                     }}
                   >
                     {borrowingBookId === book.id ? 'Requesting...' :
-                     currentlyBorrowed >= 2 ? 'Limit Reached' : 'Request Book'}
+                     currentlyBorrowed >= 3 ? 'Limit Reached' : 'Request Book'}
                   </button>
                 </div>
               ))}
@@ -492,15 +492,15 @@ const MainPage = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 className="section-title" style={{ margin: 0 }}>Currently Borrowed Books</h2>
               <div style={{
-                background: activeBorrowedCount >= 2 ? '#fee2e2' : '#dbeafe',
-                color: activeBorrowedCount >= 2 ? '#991b1b' : '#1e40af',
+                background: activeBorrowedCount >= 3 ? '#fee2e2' : '#dbeafe',
+                color: activeBorrowedCount >= 3 ? '#991b1b' : '#1e40af',
                 padding: '8px 16px',
                 borderRadius: '20px',
                 fontWeight: '600',
                 fontSize: '14px'
               }}>
-                {activeBorrowedCount} / 2 Books Borrowed
-                {activeBorrowedCount >= 2 && ' (Limit Reached)'}
+                {activeBorrowedCount} / 3 Books Borrowed
+                {activeBorrowedCount >= 3 && ' (Limit Reached)'}
               </div>
             </div>
             {borrowedBooks.length === 0 ? (
@@ -1042,7 +1042,7 @@ const MainPage = () => {
               My Books
               {borrowedBooks.filter(b => b.return_status === 'active' || !b.return_status).length > 0 && (
                 <span className="badge">
-                  {borrowedBooks.filter(b => b.return_status === 'active' || !b.return_status).length}/2
+                  {borrowedBooks.filter(b => b.return_status === 'active' || !b.return_status).length}/3
                 </span>
               )}
             </span>
