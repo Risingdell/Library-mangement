@@ -396,8 +396,8 @@ const AdminDashboard = () => {
     // This should never be reached as we redirect in useEffect
     //Dhanush M-2026-22-2
     //git check3
-    //git chheck5
-    //git check6
+    //git chheck8
+    
     return null;
   }
 
@@ -459,7 +459,7 @@ const AdminDashboard = () => {
             <span className="nav-icon">
               <img src="/pending.svg" alt="Pending Returns" style={{ width: '20px', height: '20px' }} />
             </span>
-            <span className="nav-text">Pending Returns</span>
+            <span className="nav-text">Pending Returns {pendingReturns.length > 0 && <span className="badge">{pendingReturns.length}</span>}</span>
           </button>
           <button className={`nav-item${activeTab === 'history' ? ' active' : ''}`} onClick={() => handleTabChange('history')}>
             <span className="nav-icon">
@@ -839,9 +839,9 @@ const AdminDashboard = () => {
           )}
           {activeTab === 'pending-returns' && (
             <div className="dashboard-content">
-              <h2 className="section-title">Pending Book Returns ({pendingReturns.length})</h2>
+              <h2 className="section-title">Books In Circulation ({pendingReturns.length})</h2>
               {pendingReturns.length === 0 ? (
-                <p>No pending return requests.</p>
+                <p>No books currently borrowed.</p>
               ) : (
                 <table>
                   <thead>
@@ -852,33 +852,50 @@ const AdminDashboard = () => {
                       <th>Borrower</th>
                       <th>Username</th>
                       <th>Borrowed On</th>
-                      <th>Submitted On</th>
+                      <th>Due Date</th>
+                      <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pendingReturns.map((item) => (
-                      <tr key={item.borrow_id}>
+                      <tr key={item.borrow_id} style={{ background: item.is_overdue ? '#fff5f5' : '' }}>
                         <td>{item.book_title}</td>
                         <td>{item.book_author}</td>
                         <td>{item.acc_no}</td>
                         <td>{item.borrower_name}</td>
                         <td>{item.borrower_username}</td>
                         <td>{new Date(item.borrow_date).toLocaleDateString()}</td>
-                        <td>{new Date(item.returned_at).toLocaleDateString()}</td>
+                        <td style={{ color: item.is_overdue ? '#ef4444' : '' }}>
+                          {new Date(item.expiry_date).toLocaleDateString()}
+                          {item.is_overdue && <span style={{ marginLeft: '6px', fontWeight: '600' }}>⚠️ Overdue</span>}
+                        </td>
                         <td>
-                          <button
-                            className="approve-btn"
-                            onClick={() => handleApproveReturn(item.borrow_id)}
-                          >
-                            ✅ Approve
-                          </button>
-                          <button
-                            className="reject-btn"
-                            onClick={() => handleRejectReturn(item.borrow_id)}
-                          >
-                            ❌ Reject
-                          </button>
+                          {item.return_status === 'pending_return'
+                            ? <span style={{ color: '#f59e0b', fontWeight: '600' }}>↩ Return Requested</span>
+                            : <span style={{ color: '#3b82f6', fontWeight: '600' }}>📖 Borrowed</span>
+                          }
+                        </td>
+                        <td>
+                          {item.return_status === 'pending_return' && (
+                            <>
+                              <button
+                                className="approve-btn"
+                                onClick={() => handleApproveReturn(item.borrow_id)}
+                              >
+                                ✅ Approve Return
+                              </button>
+                              <button
+                                className="reject-btn"
+                                onClick={() => handleRejectReturn(item.borrow_id)}
+                              >
+                                ❌ Reject
+                              </button>
+                            </>
+                          )}
+                          {item.return_status === 'active' && (
+                            <span style={{ color: '#94a3b8', fontSize: '13px' }}>Awaiting return</span>
+                          )}
                         </td>
                       </tr>
                     ))}
