@@ -320,12 +320,15 @@ const AdminDashboard = () => {
             { request_id: requestId },
                       );
           showSnackbar('success', res.data.message || 'Request approved successfully');
-          // Refresh purchase requests list (since it now shows library requests)
-          const updatedRes = await axios.get(`${API_URL}/api/admin/purchase-requests`);
+          // Refresh all three lists in parallel
+          const [updatedRes, branchRes, approvedRes] = await Promise.all([
+            axios.get(`${API_URL}/api/admin/purchase-requests`),
+            axios.get(`${API_URL}/api/admin/branch-books/pending-requests`),
+            axios.get(`${API_URL}/api/admin/branch-books/approved-requests`),
+          ]);
           setPurchaseRequests(updatedRes.data);
-          // Also refresh branch book requests for other tabs
-          const branchRes = await axios.get(`${API_URL}/api/admin/branch-books/pending-requests`);
           setBranchBookRequests(branchRes.data);
+          setApprovedBranchRequests(approvedRes.data);
         } catch (err) {
           console.error('Approve failed:', err);
           showSnackbar('error', err.response?.data?.message || 'Failed to approve request');
